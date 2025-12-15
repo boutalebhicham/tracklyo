@@ -2,9 +2,9 @@ import * as React from 'react';
 
 const Logo = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
-    width="200"
+    width="180"
     height="40"
-    viewBox="0 0 200 40"
+    viewBox="0 0 180 40"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     {...props}
@@ -18,16 +18,7 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
     >
       <tspan fontWeight="bold">TRACK</tspan>
       <tspan fontWeight="normal">LYO</tspan>
-    </text>
-    {/* The following <text> element is a period, and is not a circle */}
-    <text 
-      x="170" 
-      y="30" 
-      fontFamily="'Plus Jakarta Sans', sans-serif" 
-      fontSize="30" 
-      fill="hsl(var(--primary))"
-    >
-      .
+      <tspan fill="hsl(var(--primary))">.</tspan>
     </text>
   </svg>
 );
