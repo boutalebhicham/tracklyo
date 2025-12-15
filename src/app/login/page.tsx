@@ -25,7 +25,6 @@ const registerSchema = z.object({
   name: z.string().min(1, { message: 'Le nom est requis' }),
   email: z.string().email({ message: 'Adresse email invalide' }),
   password: z.string().min(6, { message: 'Le mot de passe doit contenir au moins 6 caractères' }),
-  role: z.enum(['PATRON', 'RESPONSABLE']),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -74,7 +73,7 @@ export default function LoginPage() {
         id: user.uid,
         name: data.name,
         email: data.email,
-        role: data.role,
+        role: 'PATRON',
         avatar: `https://picsum.photos/seed/${user.uid}/100/100`,
         phoneNumber: '',
       }, { merge: true });
@@ -153,13 +152,6 @@ export default function LoginPage() {
                     <Label htmlFor="register-password">Mot de passe</Label>
                     <Input id="register-password" type="password" {...registerForm.register('password')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
                     {registerForm.formState.errors.password && <p className="text-red-400 text-sm">{registerForm.formState.errors.password.message}</p>}
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Rôle</Label>
-                    <select {...registerForm.register('role')} className="w-full p-2 border rounded-xl bg-transparent focus:ring-2 focus:ring-ring text-base md:text-sm h-10 border-white/20">
-                      <option value="PATRON" className="text-black">Patron</option>
-                      <option value="RESPONSABLE" className="text-black">Responsable</option>
-                    </select>
                   </div>
                   {error && <p className="text-red-400 text-sm text-center">{error}</p>}
                   <Button type="submit" className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground" disabled={registerForm.formState.isSubmitting}>
