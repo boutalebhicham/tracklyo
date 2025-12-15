@@ -15,11 +15,10 @@ type DashboardViewProps = {
   recaps: Recap[]
   events: CalendarEvent[]
   onQuickAdd: (modal: 'addTransaction' | 'addEvent') => void
-  viewAs: string
   setActiveView: (view: string) => void;
 }
 
-const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs, setActiveView }: DashboardViewProps) => {
+const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActiveView }: DashboardViewProps) => {
   const balance = transactions.reduce((acc, tx) => acc + (tx.type === 'BUDGET_ADD' ? tx.amount : -tx.amount), 0)
   const totalBudget = transactions.filter(t => t.type === 'BUDGET_ADD').reduce((acc, tx) => acc + tx.amount, 0)
   const latestRecap = recaps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]

@@ -19,8 +19,6 @@ import Logo from './logo'
 
 type AppSidebarProps = {
   currentUser: User
-  viewAs: string
-  setViewAs: (role: string) => void
   activeView: string
   setActiveView: (view: string) => void
   onLogout: () => void;
@@ -37,16 +35,10 @@ const menuItems = [
 
 const AppSidebar = ({
   currentUser,
-  viewAs,
-  setViewAs,
   activeView,
   setActiveView,
   onLogout
 }: AppSidebarProps) => {
-
-  const handleRoleSwitch = () => {
-    setViewAs(currentUser.role === 'PATRON' ? 'RESPONSABLE' : 'PATRON')
-  }
 
   const handleViewChange = (viewId: string) => {
     if (viewId === 'budget') {
@@ -96,12 +88,6 @@ const AppSidebar = ({
         </div>
 
         <SidebarFooter className="mt-auto p-2 space-y-2">
-          {currentUser.role.toUpperCase() === 'PATRON' && (
-            <Button onClick={handleRoleSwitch} variant="ghost" className="w-full justify-start h-12 text-base font-normal rounded-xl bg-black/20 hover:bg-black/30">
-                <UserIcon size={20} className="mr-3" />
-                {viewAs.toUpperCase() === 'PATRON' ? 'Vue Responsable' : 'Vue Patron'}
-            </Button>
-          )}
            <Button onClick={onLogout} variant="ghost" className="w-full justify-start h-12 text-base font-normal rounded-xl hover:bg-black/20">
                 <LogOut size={20} className="mr-3" />
                 Déconnexion

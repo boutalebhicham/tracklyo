@@ -2,16 +2,15 @@
 
 import React, { useState, useMemo } from 'react'
 import type { Transaction, Currency } from '@/lib/definitions'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from '@/components/ui/table'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-import { BarChart, Bar, XAxis, YAxis } from "recharts"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
 import { calculateBalance, convertCurrency, formatCurrency } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { Plus, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
+import { Plus, ArrowDown, ArrowUp, Wallet, Clock, MoreHorizontal } from 'lucide-react'
 
 type FinancesViewProps = {
   transactions: Transaction[]
@@ -55,81 +54,116 @@ const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewPr
     expenses: { label: "Dépenses", color: "hsl(var(--chart-2))" },
   }
 
+  const handleCurrencyChange = (currency: Currency) => {
+    setCurrentCurrency(currency);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold">Finances</h2>
-        <div className="flex items-center gap-4">
-          <Select value={currentCurrency} onValueChange={(value: Currency) => setCurrentCurrency(value)}>
-            <SelectTrigger className="w-[100px] rounded-xl backdrop-blur-sm bg-background/70">
-              <SelectValue placeholder="Devise" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl backdrop-blur-sm bg-popover/80">
-              <SelectItem value="EUR">EUR</SelectItem>
-              <SelectItem value="USD">USD</SelectItem>
-              <SelectItem value="XOF">XOF</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={onAddTransaction} className="rounded-xl gap-2">
-            <Plus size={16}/>
-            <span>{viewAs.toUpperCase() === 'PATRON' ? 'Budget' : 'Dépense'}</span>
+        <div>
+          <h2 className="text-3xl font-bold">Finances</h2>
+          <p className="text-muted-foreground">Vue consolidée de votre trésorerie (conversion automatique).</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="bg-white dark:bg-neutral-800 p-1 rounded-full flex items-center">
+            {(['EUR', 'USD', 'XOF'] as Currency[]).map(c => (
+              <Button 
+                key={c}
+                variant={currentCurrency === c ? 'default' : 'ghost'} 
+                onClick={() => handleCurrencyChange(c)}
+                className="rounded-full px-4 h-8"
+              >
+                {c}
+              </Button>
+            ))}
+          </div>
+          <Button onClick={onAddTransaction} variant="destructive" className="rounded-full gap-2 px-4 h-10">
+            <Plus size={16} />
+            <span>Dépense</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="rounded-4xl bg-background/70 backdrop-blur-sm"><CardHeader><CardTitle>Solde Total</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{formatCurrency(displayBalance, currentCurrency)}</p></CardContent></Card>
-        <Card className="rounded-4xl bg-background/70 backdrop-blur-sm"><CardHeader><CardTitle>Total Budget</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold text-green-500">{formatCurrency(displayTotalBudget, currentCurrency)}</p></CardContent></Card>
-        <Card className="rounded-4xl bg-background/70 backdrop-blur-sm"><CardHeader><CardTitle>Total Dépenses</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold text-red-500">{formatCurrency(displayTotalExpenses, currentCurrency)}</p></CardContent></Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <Card className="lg:col-span-3 rounded-4xl bg-background/70 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle>Flux de trésorerie</CardTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="dark bg-gray-900 text-white rounded-4xl shadow-2xl shadow-primary/10 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between">
+             <div className="p-3 bg-white/10 rounded-xl">
+                <Wallet size={20} />
+             </div>
+             <div className="text-right">
+                <p className="text-xs text-white/50">AFFICHAGE EN</p>
+                <p className="font-bold">{currentCurrency}</p>
+             </div>
+          </CardHeader>
+          <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
+            <p className="text-sm text-white/60">Solde Total Estimé</p>
+            <p className="text-5xl font-bold tracking-tighter my-2">{formatCurrency(displayBalance, currentCurrency)}</p>
+          </CardContent>
+          <CardFooter className="flex justify-between items-center text-sm border-t border-white/10 p-4">
+            <div className="flex items-center gap-2 text-green-400">
+              <ArrowDown size={16} />
+              <span>{formatCurrency(displayTotalBudget, currentCurrency)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-red-400">
+              <ArrowUp size={16} />
+              <span>{formatCurrency(displayTotalExpenses, currentCurrency)}</span>
+            </div>
+          </CardFooter>
+        </Card>
+        
+        <Card className="lg:col-span-2 rounded-4xl bg-background/70 backdrop-blur-sm">
+          <CardHeader className="flex flex-row justify-between items-center">
+            <CardTitle className="flex items-center gap-2"><Clock size={18}/> Flux de trésorerie ({currentCurrency})</CardTitle>
+            <Button variant="ghost" className="rounded-full text-sm font-normal">Vue Globale</Button>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-              <BarChart accessibilityLayer data={chartData}>
+             <ChartContainer config={chartConfig} className="h-[250px] w-full">
+              <BarChart data={chartData} margin={{ top: 20, right: 20, left: -20, bottom: 0 }}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000}k`} />
+                <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000}k`} tickMargin={8} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="budget" fill="var(--color-budget)" radius={8} />
-                <Bar dataKey="expenses" fill="var(--color-expenses)" radius={8} />
+                <Bar dataKey="budget" fill="var(--color-budget)" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="expenses" fill="var(--color-expenses)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>
-        <Card className="lg:col-span-2 rounded-4xl bg-background/70 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle>Historique</CardTitle>
+      </div>
+      
+       <Card className="rounded-4xl bg-background/70 backdrop-blur-sm">
+          <CardHeader className="flex flex-row justify-between items-center">
+            <CardTitle>Historique Global</CardTitle>
+            <Button variant="ghost" className="rounded-full text-sm font-normal">Toutes devises</Button>
           </CardHeader>
-          <CardContent className="max-h-[300px] overflow-y-auto">
+          <CardContent>
             <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Raison</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Montant</TableHead>
+                  <TableHead className="w-12"></TableHead>
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {transactions.slice().reverse().map(tx => (
                   <TableRow key={tx.id}>
-                    <TableCell>
-                      {tx.type === 'BUDGET_ADD' ? <ArrowUpCircle className="text-green-500" /> : <ArrowDownCircle className="text-red-500" />}
+                    <TableCell className="font-medium">{tx.reason}</TableCell>
+                    <TableCell className="text-muted-foreground">{format(parseISO(tx.date), 'd MMM yyyy, HH:mm', { locale: fr })}</TableCell>
+                    <TableCell className={`text-right font-semibold ${tx.type === 'BUDGET_ADD' ? 'text-green-500' : 'text-red-500'}`}>
+                      {tx.type === 'BUDGET_ADD' ? '+' : '-'} {formatCurrency(tx.amount, tx.currency)}
                     </TableCell>
-                    <TableCell>
-                      <p className="font-medium">{tx.reason}</p>
-                      <p className="text-sm text-muted-foreground">{format(parseISO(tx.date), 'd MMM yyyy', { locale: fr })}</p>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatCurrency(tx.amount, tx.currency)}
-                    </TableCell>
+                    <TableCell><Button variant="ghost" size="icon" className="rounded-full h-8 w-8"><MoreHorizontal size={16}/></Button></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
-      </div>
     </div>
   )
 }
 
 export default FinancesView
-
-    

@@ -20,12 +20,11 @@ type ActivityViewProps = {
   comments: Comment[]
   users: User[]
   onAddRecap: () => void
-  viewAs: string
   currentUser: User
   authorId: string
 }
 
-const ActivityView = ({ recaps, comments, users, onAddRecap, viewAs, currentUser, authorId }: ActivityViewProps) => {
+const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, authorId }: ActivityViewProps) => {
 
   const getUser = (id: string) => users.find(u => u.id === id)
   const firestore = useFirestore();

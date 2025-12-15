@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -43,16 +43,9 @@ export default function Home() {
   }, [firestore, user]);
   const { data: responsables } = useCollection<User>(responsablesQuery);
 
-  const [viewAs, setViewAs] = useState<string>('PATRON');
-  const [selectedResponsable, setSelectedResponsable] = useState<User | null>(null);
   const [activeView, setActiveView] = useState('accueil');
   const [modal, setModal] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (responsables && responsables.length > 0 && !selectedResponsable) {
-      setSelectedResponsable(responsables[0]);
-    }
-  }, [responsables, selectedResponsable]);
   
   const handleLogout = () => {
     if (auth) {
@@ -71,13 +64,10 @@ export default function Home() {
   // Determine the user whose data should be displayed.
   // If the current user is a "PATRON", they can switch views.
   // If they are a "RESPONSABLE", they only see their own data.
-  const activeUser = useMemo(() => {
+  const activeUser = useMemoFirebase(() => {
     if (!currentUserData) return null;
-    if (currentUserData.role.toUpperCase() === 'PATRON') {
-      return viewAs.toUpperCase() === 'PATRON' ? selectedResponsable : currentUserData;
-    }
-    return currentUserData; // Responsable always sees their own data
-  }, [currentUserData, viewAs, selectedResponsable]);
+    return currentUserData; // Simplified to always show current user's data
+  }, [currentUserData]);
   
   const authorId = activeUser?.id;
 
@@ -161,9 +151,9 @@ export default function Home() {
     setModal(null);
   };
 
-  const whatsAppTarget = viewAs.toUpperCase() === 'PATRON' ? selectedResponsable : currentUserData;
+  const whatsAppTarget = currentUserData;
   
-  if (isUserLoading || !user || !currentUserData || (currentUserData.role.toUpperCase() === 'PATRON' && !responsables) ) {
+  if (isUserLoading || !user || !currentUserData ) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement...</p>
@@ -181,7 +171,6 @@ export default function Home() {
             recaps={recaps || []}
             events={events || []}
             onQuickAdd={(type) => setModal(type)}
-            viewAs={viewAs}
             setActiveView={setActiveView}
           />
         );
@@ -190,7 +179,7 @@ export default function Home() {
           <FinancesView 
             transactions={transactions || []} 
             onAddTransaction={() => setModal('addTransaction')}
-            viewAs={viewAs}
+            viewAs={currentUserData.role}
           />
         );
       case 'activite':
@@ -200,7 +189,6 @@ export default function Home() {
             comments={comments || []}
             users={responsables ? [...responsables, currentUserData] : [currentUserData]}
             onAddRecap={() => setModal('addRecap')}
-            viewAs={viewAs}
             currentUser={currentUserData}
             authorId={authorId!}
           />
@@ -220,7 +208,7 @@ export default function Home() {
           />
         );
       default:
-        return <DashboardView user={activeUser!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} viewAs={viewAs} setActiveView={setActiveView} />;
+        return <DashboardView user={activeUser!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
     }
   }
 
@@ -252,7 +240,7 @@ export default function Home() {
         onClose={() => setModal(null)} 
         onAddTransaction={handleAddTransaction} 
         authorId={authorId!}
-        viewAs={viewAs}
+        viewAs={currentUserData.role}
         transactions={transactions || []}
       />
       <AddRecapModal 
