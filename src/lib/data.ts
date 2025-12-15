@@ -1,9 +1,12 @@
 import type { User, Transaction, Recap, Comment, CalendarEvent } from './definitions';
 import { subDays, subHours } from 'date-fns';
 
+// This data is now for placeholder/fallback purposes.
+// The main data will be managed via Firebase in the page component.
+
 export const initialUsers: User[] = [
-  { id: 'user-patron-1', name: 'Alexandre', role: 'PATRON', avatar: 'https://picsum.photos/seed/patron/100/100', phoneNumber: '33612345678' },
-  { id: 'user-responsable-1', name: 'Léa Dubois', role: 'RESPONSABLE', avatar: 'https://picsum.photos/seed/responsable1/100/100', phoneNumber: '33787654321' },
+  { id: 'user-patron-1', name: 'Alexandre', email: 'alex@tracklyo.com', role: 'PATRON', avatar: 'https://picsum.photos/seed/patron/100/100', phoneNumber: '33612345678' },
+  { id: 'user-responsable-1', name: 'Léa Dubois', email: 'lea@tracklyo.com', role: 'RESPONSABLE', avatar: 'https://picsum.photos/seed/responsable1/100/100', phoneNumber: '33787654321' },
 ];
 
 const responsableId = 'user-responsable-1';

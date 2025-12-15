@@ -10,6 +10,9 @@ import { Input } from '@/components/ui/input'
 import { Plus, MessageSquare } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { useFirestore } from '@/firebase'
+import { addDocumentNonBlocking } from '@/firebase'
+import { collection } from 'firebase/firestore'
 
 type ActivityViewProps = {
   recaps: Recap[]
@@ -17,25 +20,43 @@ type ActivityViewProps = {
   users: User[]
   onAddRecap: () => void
   viewAs: UserRole
+  currentUser: User
+  authorId: string
 }
 
-const ActivityView = ({ recaps, comments, users, onAddRecap, viewAs }: ActivityViewProps) => {
+const ActivityView = ({ recaps, comments, users, onAddRecap, viewAs, currentUser, authorId }: ActivityViewProps) => {
 
   const getUser = (id: string) => users.find(u => u.id === id)
+  const firestore = useFirestore();
+
+  const handleAddComment = (recapId: string, content: string) => {
+    if (!content.trim()) return;
+    const ref = collection(firestore, 'users', authorId, 'recaps', recapId, 'comments');
+    addDocumentNonBlocking(ref, {
+      recapId,
+      authorId: currentUser.id,
+      content,
+      date: new Date().toISOString()
+    });
+    // Clear input field after submission if you control it with state
+  };
+
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Activité</h2>
-        <Button onClick={onAddRecap} className="rounded-xl gap-2" disabled={viewAs === 'PATRON'}>
-          <Plus size={16} /> Nouveau Recap
-        </Button>
+        {viewAs === 'RESPONSABLE' && (
+          <Button onClick={onAddRecap} className="rounded-xl gap-2">
+            <Plus size={16} /> Nouveau Recap
+          </Button>
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {recaps.map(recap => {
           const recapComments = comments.filter(c => c.recapId === recap.id);
           return (
-            <Card key={recap.id} className="rounded-4xl flex flex-col bg-background/70 backdrop-blur-sm">
+            <Card key={recap.id} className="rounded-4xl flex flex-col bg-card">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle>{recap.title}</CardTitle>
@@ -74,9 +95,20 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, viewAs }: ActivityV
                 </div>
                 <div className="w-full flex items-center gap-2">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={getUser(viewAs === 'PATRON' ? 'user-patron-1' : 'user-responsable-1')?.avatar}/>
+                    <AvatarImage src={currentUser?.avatar}/>
+                    <AvatarFallback>{currentUser?.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                   <Input placeholder="Ajouter un commentaire..." className="rounded-xl bg-gray-100 dark:bg-neutral-800 focus-visible:ring-primary"/>
+                   <form
+                    className="flex-1"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const input = e.currentTarget.elements.namedItem('comment-input') as HTMLInputElement;
+                      handleAddComment(recap.id, input.value);
+                      input.value = '';
+                    }}
+                   >
+                    <Input name="comment-input" placeholder="Ajouter un commentaire..." className="rounded-xl bg-gray-100 dark:bg-neutral-800 focus-visible:ring-primary"/>
+                   </form>
                 </div>
               </CardFooter>
             </Card>
