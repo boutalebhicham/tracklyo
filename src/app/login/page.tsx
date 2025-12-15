@@ -23,6 +23,7 @@ const loginSchema = z.object({
 
 const registerSchema = z.object({
   name: z.string().min(1, { message: 'Le nom est requis' }),
+  role: z.string().min(1, { message: 'Le poste est requis' }),
   email: z.string().email({ message: 'Adresse email invalide' }),
   password: z.string().min(6, { message: 'Le mot de passe doit contenir au moins 6 caractères' }),
 });
@@ -73,7 +74,7 @@ export default function LoginPage() {
         id: user.uid,
         name: data.name,
         email: data.email,
-        role: 'PATRON',
+        role: data.role,
         avatar: `https://picsum.photos/seed/${user.uid}/100/100`,
         phoneNumber: '',
       }, { merge: true });
@@ -144,6 +145,11 @@ export default function LoginPage() {
                     {registerForm.formState.errors.name && <p className="text-red-400 text-sm">{registerForm.formState.errors.name.message}</p>}
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="register-role">Votre poste</Label>
+                    <Input id="register-role" {...registerForm.register('role')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
+                    {registerForm.formState.errors.role && <p className="text-red-400 text-sm">{registerForm.formState.errors.role.message}</p>}
+                  </div>
+                  <div className="grid gap-2">
                     <Label htmlFor="register-email">Email</Label>
                     <Input id="register-email" {...registerForm.register('email')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
                     {registerForm.formState.errors.email && <p className="text-red-400 text-sm">{registerForm.formState.errors.email.message}</p>}
@@ -205,3 +211,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

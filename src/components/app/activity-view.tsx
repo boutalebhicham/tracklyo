@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import type { Recap, Comment, User, UserRole } from '@/lib/definitions'
+import type { Recap, Comment, User } from '@/lib/definitions'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -19,7 +19,7 @@ type ActivityViewProps = {
   comments: Comment[]
   users: User[]
   onAddRecap: () => void
-  viewAs: UserRole
+  viewAs: string
   currentUser: User
   authorId: string
 }
@@ -46,7 +46,7 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, viewAs, currentUser
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Activité</h2>
-        {viewAs === 'RESPONSABLE' && (
+        {viewAs.toUpperCase() === 'RESPONSABLE' && (
           <Button onClick={onAddRecap} className="rounded-xl gap-2">
             <Plus size={16} /> Nouveau Recap
           </Button>
@@ -120,3 +120,5 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, viewAs, currentUser
 }
 
 export default ActivityView
+
+    

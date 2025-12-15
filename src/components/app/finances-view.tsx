@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
-import type { Transaction, Currency, UserRole } from '@/lib/definitions'
+import type { Transaction, Currency } from '@/lib/definitions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
@@ -16,7 +16,7 @@ import { Plus, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
 type FinancesViewProps = {
   transactions: Transaction[]
   onAddTransaction: () => void
-  viewAs: UserRole
+  viewAs: string
 }
 
 const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewProps) => {
@@ -72,7 +72,7 @@ const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewPr
           </Select>
           <Button onClick={onAddTransaction} className="rounded-xl gap-2">
             <Plus size={16}/>
-            <span>{viewAs === 'PATRON' ? 'Budget' : 'Dépense'}</span>
+            <span>{viewAs.toUpperCase() === 'PATRON' ? 'Budget' : 'Dépense'}</span>
           </Button>
         </div>
       </div>
@@ -131,3 +131,5 @@ const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewPr
 }
 
 export default FinancesView
+
+    

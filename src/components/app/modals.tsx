@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, UserRole, TransactionType } from '@/lib/definitions';
+import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -49,17 +49,18 @@ export const PaywallModal = ({ isOpen, onClose }: ModalProps) => (
 );
 
 
-export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAddUser: (user: User) => void }) => {
+export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAddUser: (user: Omit<User, 'id' | 'email'>) => void }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [role, setRole] = useState('RESPONSABLE');
+
 
   const handleSubmit = () => {
     if (name && phone) {
       onAddUser({
-        id: `user-${Date.now()}`,
         name,
         phoneNumber: phone,
-        role: 'RESPONSABLE',
+        role,
         avatar: `https://picsum.photos/seed/${Date.now()}/100/100`,
       });
     }
@@ -80,13 +81,13 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
 };
 
 
-export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, viewAs, transactions }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id'>) => void, authorId: string, viewAs: UserRole, transactions: Transaction[] }) => {
+export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, viewAs, transactions }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id'>) => void, authorId: string, viewAs: string, transactions: Transaction[] }) => {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [currency, setCurrency] = useState<Currency>('EUR');
   const [error, setError] = useState('');
   
-  const type: TransactionType = viewAs === 'PATRON' ? 'BUDGET_ADD' : 'EXPENSE';
+  const type: TransactionType = viewAs.toUpperCase() === 'PATRON' ? 'BUDGET_ADD' : 'EXPENSE';
 
   const handleSubmit = () => {
     const numericAmount = parseFloat(amount);
@@ -192,3 +193,5 @@ export const AddEventModal = ({ isOpen, onClose, onAddEvent, authorId }: ModalPr
         </Dialog>
     )
 }
+
+    

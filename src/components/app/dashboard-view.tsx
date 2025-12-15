@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Plus, FileText, Calendar, ArrowUpRight, Wand, Mic, ArrowRight, Clock } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import type { Transaction, Recap, CalendarEvent, UserRole, User } from '@/lib/definitions'
+import type { Transaction, Recap, CalendarEvent, User } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
 
 type DashboardViewProps = {
@@ -14,7 +14,7 @@ type DashboardViewProps = {
   recaps: Recap[]
   events: CalendarEvent[]
   onQuickAdd: (modal: 'addTransaction' | 'addEvent') => void
-  viewAs: UserRole
+  viewAs: string
 }
 
 const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs }: DashboardViewProps) => {
@@ -137,3 +137,5 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs 
 }
 
 export default DashboardView
+
+    

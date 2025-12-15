@@ -37,13 +37,12 @@ export default function Home() {
   const { data: currentUserData } = useDoc<User>(userDocRef);
 
   const responsablesQuery = useMemoFirebase(() => {
-    // Only fetch responsables if a user is logged in
     if (!user) return null;
     return query(collection(firestore, 'users'), where('role', '==', 'RESPONSABLE'));
   }, [firestore, user]);
   const { data: responsables } = useCollection<User>(responsablesQuery);
 
-  const [viewAs, setViewAs] = useState<'PATRON' | 'RESPONSABLE'>('PATRON');
+  const [viewAs, setViewAs] = useState<string>('PATRON');
   const [selectedResponsable, setSelectedResponsable] = useState<User | null>(null);
   const [activeView, setActiveView] = useState('accueil');
   const [modal, setModal] = useState<string | null>(null);
@@ -74,7 +73,7 @@ export default function Home() {
   }, [currentUserData, viewAs, selectedResponsable]);
 
 
-  const activeUser = viewAs === 'PATRON' ? selectedResponsable : currentUserData;
+  const activeUser = viewAs.toUpperCase() === 'PATRON' ? selectedResponsable : currentUserData;
   const authorId = activeUser?.id;
 
   const transactionsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'transactions')) : null, [firestore, authorId]);
@@ -143,7 +142,7 @@ export default function Home() {
     setModal(null);
   }
 
-  const whatsAppTarget = viewAs === 'PATRON' ? selectedResponsable : currentUserData;
+  const whatsAppTarget = viewAs.toUpperCase() === 'PATRON' ? selectedResponsable : currentUserData;
   
   if (isUserLoading || !user || !currentUserData || !responsables) {
     return (
@@ -250,3 +249,5 @@ export default function Home() {
     </SidebarProvider>
   );
 }
+
+    

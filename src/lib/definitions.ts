@@ -1,4 +1,3 @@
-export type UserRole = 'PATRON' | 'RESPONSABLE';
 export type Currency = 'EUR' | 'USD' | 'XOF';
 export type TransactionType = 'BUDGET_ADD' | 'EXPENSE';
 export type RecapType = 'DAILY' | 'WEEKLY';
@@ -7,7 +6,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: string; // Changed from UserRole to string
   avatar: string;
   phoneNumber: string;
 }
@@ -56,3 +55,5 @@ export interface DocumentFile {
   date: string;
   size: string; // e.g., '2.5MB'
 }
+
+    

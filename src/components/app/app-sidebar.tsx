@@ -13,14 +13,14 @@ import {
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import type { User, UserRole } from '@/lib/definitions'
+import type { User } from '@/lib/definitions'
 import { Plus, Users, CheckCircle2, LayoutGrid, Wand, Activity, Calendar, Folder, Landmark, LogOut } from 'lucide-react'
 import { Badge } from '../ui/badge'
 
 type AppSidebarProps = {
   currentUser: User
-  viewAs: UserRole
-  setViewAs: (role: UserRole) => void
+  viewAs: string
+  setViewAs: (role: string) => void
   responsables: User[]
   selectedResponsable: User
   setSelectedResponsable: (user: User) => void
@@ -82,7 +82,7 @@ const AppSidebar = ({
       </SidebarHeader>
       <SidebarContent className="flex flex-col justify-between p-4">
         <div>
-          {currentUser.role === 'PATRON' && (
+          {currentUser.role.toUpperCase() === 'PATRON' && (
             <div className="px-2 pb-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-sidebar-foreground/50 uppercase">SUIVI DE :</p>
@@ -128,10 +128,10 @@ const AppSidebar = ({
         </div>
 
         <SidebarFooter className="mt-auto p-2">
-          {currentUser.role === 'PATRON' && (
+          {currentUser.role.toUpperCase() === 'PATRON' && (
             <Button onClick={handleRoleSwitch} variant="ghost" className="w-full justify-center h-12 text-base">
                 <Users size={20} className="mr-2" />
-                {viewAs === 'PATRON' ? 'Voir comme Responsable' : 'Voir comme Patron'}
+                {viewAs.toUpperCase() === 'PATRON' ? 'Voir comme Responsable' : 'Voir comme Patron'}
             </Button>
           )}
            <Button onClick={onLogout} variant="ghost" className="w-full justify-center h-12 text-base">
@@ -145,3 +145,5 @@ const AppSidebar = ({
 }
 
 export default AppSidebar
+
+    
