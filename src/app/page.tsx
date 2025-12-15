@@ -167,6 +167,7 @@ export default function Home() {
             events={events || []}
             onQuickAdd={(type) => setModal(type)}
             viewAs={viewAs}
+            setActiveView={setActiveView}
           />
         );
       case 'finances':
@@ -197,7 +198,7 @@ export default function Home() {
           />
         );
       default:
-        return <DashboardView user={activeUser!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} viewAs={viewAs} />;
+        return <DashboardView user={activeUser!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} viewAs={viewAs} setActiveView={setActiveView} />;
     }
   }
 

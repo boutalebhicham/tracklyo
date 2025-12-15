@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react'
@@ -15,9 +16,10 @@ type DashboardViewProps = {
   events: CalendarEvent[]
   onQuickAdd: (modal: 'addTransaction' | 'addEvent') => void
   viewAs: string
+  setActiveView: (view: string) => void;
 }
 
-const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs }: DashboardViewProps) => {
+const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs, setActiveView }: DashboardViewProps) => {
   const balance = transactions.reduce((acc, tx) => acc + (tx.type === 'BUDGET_ADD' ? tx.amount : -tx.amount), 0)
   const totalBudget = transactions.filter(t => t.type === 'BUDGET_ADD').reduce((acc, tx) => acc + tx.amount, 0)
   const latestRecap = recaps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
@@ -73,8 +75,8 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs 
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6 flex items-center gap-4" onClick={() => onQuickAdd('addTransaction')}>
+          <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onQuickAdd('addTransaction')}>
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-xl">
                 <Plus className="text-green-600 dark:text-green-400" />
               </div>
@@ -84,8 +86,8 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs 
               </div>
             </CardContent>
           </Card>
-          <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6 flex items-center gap-4" onClick={() => onQuickAdd('addEvent')}>
+          <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onQuickAdd('addEvent')}>
+            <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
                 <Plus className="text-purple-600 dark:text-purple-400" />
               </div>
@@ -98,7 +100,7 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs 
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <Card className="rounded-4xl shadow-sm">
+          <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveView('activite')}>
             <CardHeader className="flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2"><FileText size={18} className="text-muted-foreground"/> Dernier rapport</CardTitle>
               <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full"><ArrowRight size={16} /></Button>
@@ -114,7 +116,7 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs 
               )}
             </CardContent>
           </Card>
-          <Card className="rounded-4xl shadow-sm">
+          <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveView('agenda')}>
              <CardHeader className="flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2"><Clock size={18} className="text-muted-foreground" /> Prochainement</CardTitle>
               <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full"><ArrowRight size={16} /></Button>
@@ -137,5 +139,3 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs 
 }
 
 export default DashboardView
-
-    
