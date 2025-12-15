@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -67,13 +67,17 @@ export default function Home() {
     }
   };
 
-  const currentUserForView = useMemoFirebase(() => {
+  // Determine the user whose data should be displayed.
+  // If the current user is a "PATRON", they can switch views.
+  // If they are a "RESPONSABLE", they only see their own data.
+  const activeUser = useMemo(() => {
     if (!currentUserData) return null;
-    return viewAs === 'PATRON' ? currentUserData : selectedResponsable;
+    if (currentUserData.role.toUpperCase() === 'PATRON') {
+      return viewAs.toUpperCase() === 'PATRON' ? selectedResponsable : currentUserData;
+    }
+    return currentUserData; // Responsable always sees their own data
   }, [currentUserData, viewAs, selectedResponsable]);
-
-
-  const activeUser = viewAs.toUpperCase() === 'PATRON' ? selectedResponsable : currentUserData;
+  
   const authorId = activeUser?.id;
 
   const transactionsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'transactions')) : null, [firestore, authorId]);
@@ -202,12 +206,6 @@ export default function Home() {
       <div className="flex w-full min-h-screen bg-gray-100 dark:bg-neutral-900">
         <AppSidebar
           currentUser={currentUserData}
-          viewAs={viewAs}
-          setViewAs={setViewAs}
-          responsables={responsables}
-          selectedResponsable={selectedResponsable!}
-          setSelectedResponsable={setSelectedResponsable}
-          onAddCollaborator={handleAddCollaborator}
           activeView={activeView}
           setActiveView={setActiveView}
           onLogout={handleLogout}
@@ -249,5 +247,3 @@ export default function Home() {
     </SidebarProvider>
   );
 }
-
-    

@@ -30,10 +30,10 @@
     --chart-5: 27 87% 67%;
     --radius: 1rem;
 
-    --sidebar-background: 235 25% 15%;
+    --sidebar-background: 226 25% 12%; /* Dark Blue/Black */
     --sidebar-foreground: 231 60% 94%;
-    --sidebar-border: 235 25% 25%;
-    --sidebar-accent: 243 75% 62%;
+    --sidebar-border: 226 25% 20%;
+    --sidebar-accent: 243 75% 62%; /* Blue for active item */
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-ring: 243 75% 62%;
   }

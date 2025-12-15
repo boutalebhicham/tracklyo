@@ -320,12 +320,12 @@ const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-lg p-3 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent/10 focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50",
+  "peer/menu-button relative flex w-full items-center gap-3 overflow-hidden rounded-lg p-3 text-left text-sm outline-none ring-sidebar-ring transition-colors focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       isActive: {
         true: "bg-sidebar-accent text-sidebar-accent-foreground",
-        false: "text-sidebar-foreground hover:bg-black/10",
+        false: "text-sidebar-foreground hover:bg-black/20",
       },
     },
     defaultVariants: {
@@ -347,6 +347,7 @@ const SidebarMenuButton = React.forwardRef<
       isActive = false,
       tooltip,
       className,
+      children,
       ...props
     },
     ref
@@ -355,12 +356,15 @@ const SidebarMenuButton = React.forwardRef<
     const { open, isMobile } = useSidebar()
 
     const button = (
-      <Comp
+       <Comp
         ref={ref}
         data-sidebar="menu-button"
         className={cn(sidebarMenuButtonVariants({ isActive }), className)}
         {...props}
-      />
+      >
+        {children}
+        {isActive && <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white" />}
+      </Comp>
     )
 
     if (!tooltip || open) {

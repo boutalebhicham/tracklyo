@@ -8,23 +8,19 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarTrigger
+  SidebarMenuButton
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import type { User } from '@/lib/definitions'
-import { Plus, Users, CheckCircle2, LayoutGrid, Wand, Activity, Calendar, Folder, Landmark, LogOut } from 'lucide-react'
+import { LayoutGrid, Wand, Activity, Calendar, Folder, Landmark, LogOut, User as UserIcon } from 'lucide-react'
 import { Badge } from '../ui/badge'
+import Logo from './logo'
 
 type AppSidebarProps = {
   currentUser: User
   viewAs: string
   setViewAs: (role: string) => void
-  responsables: User[]
-  selectedResponsable: User
-  setSelectedResponsable: (user: User) => void
-  onAddCollaborator: () => void
   activeView: string
   setActiveView: (view: string) => void
   onLogout: () => void;
@@ -43,10 +39,6 @@ const AppSidebar = ({
   currentUser,
   viewAs,
   setViewAs,
-  responsables,
-  selectedResponsable,
-  setSelectedResponsable,
-  onAddCollaborator,
   activeView,
   setActiveView,
   onLogout
@@ -65,61 +57,37 @@ const AppSidebar = ({
   };
 
   return (
-    <Sidebar className="w-72">
-      <SidebarHeader className="p-6 border-b border-sidebar-border">
-         <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-            <AvatarFallback>{currentUser.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-semibold text-base text-white">{currentUser.name}</p>
-            <Badge variant="outline" className="text-xs capitalize border-sidebar-border text-sidebar-foreground/80 mt-1">
-              {currentUser.role.toLowerCase()}
-            </Badge>
-          </div>
-        </div>
+    <Sidebar className="w-72 rounded-r-4xl">
+      <SidebarHeader className="p-6">
+         <Logo className="h-10 w-auto text-white" />
       </SidebarHeader>
+      
       <SidebarContent className="flex flex-col justify-between p-4">
-        <div>
-          {currentUser.role.toUpperCase() === 'PATRON' && (
-            <div className="px-2 pb-2">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-sidebar-foreground/50 uppercase">SUIVI DE :</p>
-                <Button onClick={onAddCollaborator} variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
-                  <Plus size={14} className="mr-1" /> Ajouter
-                </Button>
-              </div>
-              <div className="mt-2 space-y-1">
-                {responsables.map((user) => (
-                  <button
-                    key={user.id}
-                    onClick={() => setSelectedResponsable(user)}
-                    className={`flex items-center gap-3 w-full p-2 rounded-lg text-left transition-colors ${selectedResponsable?.id === user.id ? 'bg-black/20' : 'hover:bg-black/10'}`}
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <p className="font-semibold text-sm text-white">{user.name}</p>
-                    {selectedResponsable?.id === user.id && <div className="w-2 h-2 rounded-full bg-primary ml-auto" />}
-                  </button>
-                ))}
+        <div className="space-y-4">
+          <div className="px-2">
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-black/20">
+              <Avatar className="h-10 w-10 relative">
+                <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                <AvatarFallback>{currentUser.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-sidebar-background"></div>
+              </Avatar>
+              <div>
+                <p className="font-semibold text-sm text-white">{currentUser.name}</p>
+                <p className="text-xs uppercase text-sidebar-foreground/60 tracking-wider">{currentUser.role === 'PATRON' ? 'Manager' : currentUser.role}</p>
               </div>
             </div>
-          )}
+          </div>
           
-          <SidebarMenu className="mt-4">
+          <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.id}>
                 <SidebarMenuButton
                   onClick={() => handleViewChange(item.id)}
                   isActive={activeView === item.id || (activeView === 'finances' && item.id === 'budget')}
-                  className="w-full justify-start text-base font-medium h-12"
+                  className="w-full justify-start text-base font-normal h-12"
                 >
                   <item.icon size={20} />
                   <span>{item.label}</span>
-                   {activeView === item.id && <div className="w-2 h-2 rounded-full bg-white ml-auto" />}
                    {item.id === 'ia' && <Badge className="ml-auto bg-primary/20 text-primary border-primary/30">Nouveau</Badge>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -127,15 +95,15 @@ const AppSidebar = ({
           </SidebarMenu>
         </div>
 
-        <SidebarFooter className="mt-auto p-2">
+        <SidebarFooter className="mt-auto p-2 space-y-2">
           {currentUser.role.toUpperCase() === 'PATRON' && (
-            <Button onClick={handleRoleSwitch} variant="ghost" className="w-full justify-center h-12 text-base">
-                <Users size={20} className="mr-2" />
-                {viewAs.toUpperCase() === 'PATRON' ? 'Voir comme Responsable' : 'Voir comme Patron'}
+            <Button onClick={handleRoleSwitch} variant="ghost" className="w-full justify-start h-12 text-base font-normal rounded-xl bg-black/20 hover:bg-black/30">
+                <UserIcon size={20} className="mr-3" />
+                {viewAs.toUpperCase() === 'PATRON' ? 'Vue Responsable' : 'Vue Patron'}
             </Button>
           )}
-           <Button onClick={onLogout} variant="ghost" className="w-full justify-center h-12 text-base">
-                <LogOut size={20} className="mr-2" />
+           <Button onClick={onLogout} variant="ghost" className="w-full justify-start h-12 text-base font-normal rounded-xl hover:bg-black/20">
+                <LogOut size={20} className="mr-3" />
                 Déconnexion
             </Button>
         </SidebarFooter>
@@ -145,5 +113,3 @@ const AppSidebar = ({
 }
 
 export default AppSidebar
-
-    
