@@ -107,15 +107,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-900 via-slate-900 to-background flex flex-col items-center justify-center p-4">
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="text-center mb-8"
       >
-        <Logo className="h-16 w-auto mx-auto mb-4 text-foreground" />
-        <p className="max-w-md text-muted-foreground">
+        <Logo className="h-16 w-auto mx-auto mb-4 text-white" />
+        <p className="max-w-md text-slate-300">
           Suivez l'activité, le budget et l'agenda de vos équipes en temps réel. Tracklyo, votre partenaire de confiance.
         </p>
       </motion.div>
@@ -126,7 +126,7 @@ export default function LoginPage() {
         transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
         className="w-full max-w-sm"
       >
-        <div className="bg-card p-6 sm:p-8 rounded-4xl border shadow-2xl shadow-primary/10">
+        <div className="bg-white/10 backdrop-blur-lg text-white p-6 sm:p-8 rounded-4xl border border-white/20 shadow-2xl shadow-primary/10">
           <AnimatePresence mode="wait">
             {isRegistering ? (
               <motion.div
@@ -141,32 +141,32 @@ export default function LoginPage() {
                 <form onSubmit={registerForm.handleSubmit(handleRegister)} className="grid gap-4 mt-6">
                   <div className="grid gap-2">
                     <Label htmlFor="register-name">Nom complet</Label>
-                    <Input id="register-name" {...registerForm.register('name')} className="rounded-xl" />
-                    {registerForm.formState.errors.name && <p className="text-red-500 text-sm">{registerForm.formState.errors.name.message}</p>}
+                    <Input id="register-name" {...registerForm.register('name')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
+                    {registerForm.formState.errors.name && <p className="text-red-400 text-sm">{registerForm.formState.errors.name.message}</p>}
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="register-email">Email</Label>
-                    <Input id="register-email" {...registerForm.register('email')} className="rounded-xl" />
-                    {registerForm.formState.errors.email && <p className="text-red-500 text-sm">{registerForm.formState.errors.email.message}</p>}
+                    <Input id="register-email" {...registerForm.register('email')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
+                    {registerForm.formState.errors.email && <p className="text-red-400 text-sm">{registerForm.formState.errors.email.message}</p>}
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="register-password">Mot de passe</Label>
-                    <Input id="register-password" type="password" {...registerForm.register('password')} className="rounded-xl" />
-                    {registerForm.formState.errors.password && <p className="text-red-500 text-sm">{registerForm.formState.errors.password.message}</p>}
+                    <Input id="register-password" type="password" {...registerForm.register('password')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
+                    {registerForm.formState.errors.password && <p className="text-red-400 text-sm">{registerForm.formState.errors.password.message}</p>}
                   </div>
                   <div className="grid gap-2">
                     <Label>Rôle</Label>
-                    <select {...registerForm.register('role')} className="w-full p-2 border rounded-xl bg-transparent focus:ring-2 focus:ring-ring text-base md:text-sm h-10">
-                      <option value="PATRON">Patron</option>
-                      <option value="RESPONSABLE">Responsable</option>
+                    <select {...registerForm.register('role')} className="w-full p-2 border rounded-xl bg-transparent focus:ring-2 focus:ring-ring text-base md:text-sm h-10 border-white/20">
+                      <option value="PATRON" className="text-black">Patron</option>
+                      <option value="RESPONSABLE" className="text-black">Responsable</option>
                     </select>
                   </div>
-                  {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                  <Button type="submit" className="w-full rounded-xl" disabled={registerForm.formState.isSubmitting}>
+                  {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+                  <Button type="submit" className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground" disabled={registerForm.formState.isSubmitting}>
                     {registerForm.formState.isSubmitting ? 'Création...' : "S'inscrire"}
                   </Button>
                 </form>
-                <p className="mt-4 text-center text-sm">
+                <p className="mt-4 text-center text-sm text-slate-300">
                   Déjà un compte ?{' '}
                   <button onClick={() => setIsRegistering(false)} className="font-semibold text-primary hover:underline">
                     Se connecter
@@ -186,20 +186,20 @@ export default function LoginPage() {
                 <form onSubmit={loginForm.handleSubmit(handleLogin)} className="grid gap-4 mt-6">
                   <div className="grid gap-2">
                     <Label htmlFor="login-email">Email</Label>
-                    <Input id="login-email" {...loginForm.register('email')} className="rounded-xl" />
-                    {loginForm.formState.errors.email && <p className="text-red-500 text-sm">{loginForm.formState.errors.email.message}</p>}
+                    <Input id="login-email" {...loginForm.register('email')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
+                    {loginForm.formState.errors.email && <p className="text-red-400 text-sm">{loginForm.formState.errors.email.message}</p>}
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="login-password">Mot de passe</Label>
-                    <Input id="login-password" type="password" {...loginForm.register('password')} className="rounded-xl" />
-                    {loginForm.formState.errors.password && <p className="text-red-500 text-sm">{loginForm.formState.errors.password.message}</p>}
+                    <Input id="login-password" type="password" {...loginForm.register('password')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
+                    {loginForm.formState.errors.password && <p className="text-red-400 text-sm">{loginForm.formState.errors.password.message}</p>}
                   </div>
-                  {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                  <Button type="submit" className="w-full rounded-xl" disabled={loginForm.formState.isSubmitting}>
+                  {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+                  <Button type="submit" className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loginForm.formState.isSubmitting}>
                     {loginForm.formState.isSubmitting ? 'Connexion...' : 'Se connecter'}
                   </Button>
                 </form>
-                <p className="mt-4 text-center text-sm">
+                <p className="mt-4 text-center text-sm text-slate-300">
                   Pas encore de compte ?{' '}
                   <button onClick={() => setIsRegistering(true)} className="font-semibold text-primary hover:underline">
                     Inscrivez-vous
