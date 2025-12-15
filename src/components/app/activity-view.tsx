@@ -13,6 +13,7 @@ import { fr } from 'date-fns/locale'
 import { useFirestore } from '@/firebase'
 import { addDocumentNonBlocking } from '@/firebase'
 import { collection } from 'firebase/firestore'
+import Image from 'next/image'
 
 type ActivityViewProps = {
   recaps: Recap[]
@@ -56,8 +57,17 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, viewAs, currentUser
         {recaps.map(recap => {
           const recapComments = comments.filter(c => c.recapId === recap.id);
           return (
-            <Card key={recap.id} className="rounded-4xl flex flex-col bg-card">
-              <CardHeader>
+            <Card key={recap.id} className="rounded-4xl flex flex-col bg-card overflow-hidden">
+              {recap.mediaUrl && (
+                <div className="w-full aspect-video relative">
+                  {recap.mediaType === 'image' ? (
+                    <Image src={recap.mediaUrl} alt={recap.title} layout="fill" objectFit="cover" />
+                  ) : (
+                    <video src={recap.mediaUrl} controls className="w-full h-full object-cover"></video>
+                  )}
+                </div>
+              )}
+              <CardHeader className={recap.mediaUrl ? "pt-4" : ""}>
                 <div className="flex justify-between items-start">
                   <CardTitle>{recap.title}</CardTitle>
                   <Badge variant={recap.type === 'WEEKLY' ? 'default' : 'secondary'} className="capitalize rounded-lg">
@@ -120,5 +130,3 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, viewAs, currentUser
 }
 
 export default ActivityView
-
-    

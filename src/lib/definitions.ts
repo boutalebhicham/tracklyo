@@ -22,13 +22,14 @@ export interface Transaction {
 }
 
 export interface Recap {
-  id: string;
+  id:string;
   authorId: string;
   title: string;
   type: RecapType;
   description: string;
   date: string;
   mediaUrl?: string;
+  mediaType?: 'image' | 'video';
 }
 
 export interface Comment {

@@ -52,7 +52,7 @@ export const PaywallModal = ({ isOpen, onClose }: ModalProps) => (
 export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAddUser: (user: Omit<User, 'id' | 'email'>) => void }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('RESPONSABLE');
+  const [role, setRole] = useState('');
 
 
   const handleSubmit = () => {
@@ -60,7 +60,7 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
       onAddUser({
         name,
         phoneNumber: phone,
-        role,
+        role: role || 'PATRON',
         avatar: `https://picsum.photos/seed/${Date.now()}/100/100`,
       });
     }
@@ -73,6 +73,7 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
         <div className="space-y-4 py-4">
             <div className="space-y-2"><Label htmlFor="name">Nom complet</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} className="rounded-xl" /></div>
             <div className="space-y-2"><Label htmlFor="phone">Numéro de téléphone</Label><Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} className="rounded-xl" /></div>
+            <div className="space-y-2"><Label htmlFor="role">Votre poste</Label><Input id="role" value={role} onChange={e => setRole(e.target.value)} className="rounded-xl" /></div>
         </div>
         <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Ajouter</Button></DialogFooter>
       </GlassDialogContent>
@@ -139,11 +140,26 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [type, setType] = useState<RecapType>('DAILY');
+    const [mediaFile, setMediaFile] = useState<File | null>(null);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (event.target.files && event.target.files[0]) {
+        setMediaFile(event.target.files[0]);
+      }
+    };
 
     const handleSubmit = () => {
         if(title && description) {
-            onAddRecap({ authorId, title, description, type, date: new Date().toISOString() });
-            setTitle(''); setDescription('');
+            const recapData: Omit<Recap, 'id'> = { authorId, title, description, type, date: new Date().toISOString() };
+            if (mediaFile) {
+              recapData.mediaUrl = URL.createObjectURL(mediaFile);
+              recapData.mediaType = mediaFile.type.startsWith('image/') ? 'image' : 'video';
+            }
+            onAddRecap(recapData);
+            setTitle(''); 
+            setDescription('');
+            setMediaFile(null);
+            onClose();
         }
     }
 
@@ -160,6 +176,10 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
                         </RadioGroup>
                     </div>
                     <div className="space-y-2"><Label htmlFor="description">Description</Label><Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="rounded-xl" /></div>
+                    <div className="space-y-2">
+                      <Label htmlFor="media">Ajouter une photo ou vidéo</Label>
+                      <Input id="media" type="file" accept="image/*,video/*" onChange={handleFileChange} className="rounded-xl file:text-primary file:font-semibold" />
+                    </div>
                 </div>
                 <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Ajouter</Button></DialogFooter>
             </GlassDialogContent>
@@ -193,5 +213,3 @@ export const AddEventModal = ({ isOpen, onClose, onAddEvent, authorId }: ModalPr
         </Dialog>
     )
 }
-
-    
