@@ -19,7 +19,16 @@ const Logo = (props: React.SVGProps<SVGSVGElement>) => (
       <tspan fontWeight="bold">TRACK</tspan>
       <tspan fontWeight="normal">LYO</tspan>
     </text>
-    <circle cx="185" cy="25" r="8" fill="hsl(var(--primary))" />
+    {/* The following <text> element is a period, and is not a circle */}
+    <text 
+      x="170" 
+      y="30" 
+      fontFamily="'Plus Jakarta Sans', sans-serif" 
+      fontSize="30" 
+      fill="hsl(var(--primary))"
+    >
+      .
+    </text>
   </svg>
 );
 
