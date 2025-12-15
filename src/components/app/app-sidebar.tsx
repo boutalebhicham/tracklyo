@@ -8,7 +8,6 @@ import {
   SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -17,7 +16,6 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import type { User } from '@/lib/definitions'
 import { LogOut, Plus, Users, CheckCircle2 } from 'lucide-react'
-import Image from 'next/image'
 
 type AppSidebarProps = {
   currentUser: User
@@ -52,7 +50,7 @@ const AppSidebar = ({
           </div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tracklyo</h2>
           <div className="ml-auto hidden md:block">
-            <SidebarTrigger asChild>
+            <SidebarTrigger>
               <Button variant="ghost" size="icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M4 12H12M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </Button>

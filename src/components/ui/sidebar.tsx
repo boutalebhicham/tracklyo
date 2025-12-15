@@ -260,10 +260,24 @@ const Sidebar = React.forwardRef<
 Sidebar.displayName = "Sidebar"
 
 const SidebarTrigger = React.forwardRef<
-  React.ElementRef<typeof Button>,
+  HTMLButtonElement,
   React.ComponentProps<typeof Button>
->(({ className, onClick, ...props }, ref) => {
+>(({ children, className, onClick, ...props }, ref) => {
   const { toggleSidebar } = useSidebar()
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event);
+    toggleSidebar();
+  }
+
+  if (children) {
+    return React.cloneElement(children as React.ReactElement, {
+      ref,
+      className: cn(className, (children as React.ReactElement).props.className),
+      onClick: handleClick,
+      ...props
+    });
+  }
 
   return (
     <Button
@@ -272,10 +286,7 @@ const SidebarTrigger = React.forwardRef<
       variant="ghost"
       size="icon"
       className={cn("h-7 w-7", className)}
-      onClick={(event) => {
-        onClick?.(event)
-        toggleSidebar()
-      }}
+      onClick={handleClick}
       {...props}
     >
       <PanelLeft />
