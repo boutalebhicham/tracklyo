@@ -5,7 +5,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, FileText, Calendar, ArrowUpRight, Wand, Mic, ArrowRight, Clock } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatCurrencyCompact } from '@/lib/utils'
 import type { Transaction, Recap, CalendarEvent, User } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
 
@@ -41,12 +41,12 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActi
           </CardHeader>
           <CardContent className="flex-grow flex flex-col justify-center">
             <p className="text-sm text-muted-foreground">Trésorerie disponible (Est. EUR)</p>
-            <p className="text-6xl font-bold tracking-tighter">{formatCurrency(balance, 'EUR')}</p>
+            <p className="text-6xl font-bold tracking-tighter">{formatCurrencyCompact(balance, 'EUR')}</p>
           </CardContent>
           <CardFooter className="pt-6 border-t border-white/10 flex justify-between items-center">
             <div>
               <p className="text-xs text-muted-foreground uppercase">Budget Total</p>
-              <p className="text-lg font-semibold">{formatCurrency(totalBudget, 'EUR')}</p>
+              <p className="text-lg font-semibold">{formatCurrencyCompact(totalBudget, 'EUR')}</p>
             </div>
             <Button size="icon" variant="secondary" className="rounded-full bg-white/10 hover:bg-white/20">
               <ArrowUpRight />

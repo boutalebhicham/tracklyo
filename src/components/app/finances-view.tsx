@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo } from 'react'
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from '@/components/ui/table'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
-import { calculateBalance, convertCurrency, formatCurrency } from '@/lib/utils'
+import { calculateBalance, convertCurrency, formatCurrency, formatCurrencyCompact } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Plus, ArrowDown, ArrowUp, Wallet, Clock, MoreHorizontal } from 'lucide-react'
@@ -98,16 +99,16 @@ const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewPr
           </CardHeader>
           <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
             <p className="text-sm text-white/60">Solde Total Estimé</p>
-            <p className="text-5xl font-bold tracking-tighter my-2">{formatCurrency(displayBalance, currentCurrency)}</p>
+            <p className="text-5xl font-bold tracking-tighter my-2">{formatCurrencyCompact(displayBalance, currentCurrency)}</p>
           </CardContent>
           <CardFooter className="flex justify-between items-center text-sm border-t border-white/10 p-4">
             <div className="flex items-center gap-2 text-green-400">
               <ArrowDown size={16} />
-              <span>{formatCurrency(displayTotalBudget, currentCurrency)}</span>
+              <span>{formatCurrencyCompact(displayTotalBudget, currentCurrency)}</span>
             </div>
             <div className="flex items-center gap-2 text-red-400">
               <ArrowUp size={16} />
-              <span>{formatCurrency(displayTotalExpenses, currentCurrency)}</span>
+              <span>{formatCurrencyCompact(displayTotalExpenses, currentCurrency)}</span>
             </div>
           </CardFooter>
         </Card>

@@ -47,6 +47,29 @@ export function formatCurrency(
   }
 }
 
+// Formats a large number into a compact currency string (e.g., 10k, 1M)
+export function formatCurrencyCompact(
+  amount: number,
+  currency: Currency,
+  locale: string = 'fr-FR'
+): string {
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
+      notation: 'compact',
+      compactDisplay: 'short',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    }).format(amount);
+  } catch (e) {
+    // Fallback for very large numbers or errors
+    if (amount >= 1e6) return `${(amount / 1e6).toFixed(1)}M ${currency}`;
+    if (amount >= 1e3) return `${(amount / 1e3).toFixed(0)}K ${currency}`;
+    return `${amount.toFixed(0)} ${currency}`;
+  }
+}
+
 export const calculateBalance = (transactions: Transaction[]): { balance: number, totalBudget: number, totalExpenses: number } => {
   let totalBudget = 0;
   let totalExpenses = 0;
