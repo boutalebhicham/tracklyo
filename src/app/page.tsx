@@ -36,7 +36,11 @@ export default function Home() {
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [user, firestore]);
   const { data: currentUserData } = useDoc<User>(userDocRef);
 
-  const responsablesQuery = useMemoFirebase(() => query(collection(firestore, 'users'), where('role', '==', 'RESPONSABLE')), [firestore]);
+  const responsablesQuery = useMemoFirebase(() => {
+    // Only fetch responsables if a user is logged in
+    if (!user) return null;
+    return query(collection(firestore, 'users'), where('role', '==', 'RESPONSABLE'));
+  }, [firestore, user]);
   const { data: responsables } = useCollection<User>(responsablesQuery);
 
   const [viewAs, setViewAs] = useState<'PATRON' | 'RESPONSABLE'>('PATRON');
@@ -246,4 +250,3 @@ export default function Home() {
     </SidebarProvider>
   );
 }
-

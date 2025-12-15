@@ -1,3 +1,4 @@
+
 /**
  * Core Philosophy: This ruleset enforces a strict user-ownership model. All data is scoped
  * to a specific user and stored in subcollections under their user document. A user can only
@@ -10,7 +11,8 @@
  * Key Security Decisions:
  * - User Isolation: Access is strictly limited to the document owner based on the `{userId}` in
  *   the path. There is no concept of public data or cross-user data access.
- * - No User Listing: It is forbidden to query the top-level `/users` collection to protect user privacy.
+ * - Limited User Listing: Listing users is only allowed for authenticated users, but not for
+ *   unauthenticated users.
  * - Ownership is Final: The `authorId` or `id` field linking a document to its owner is immutable
  *   after creation, preventing documents from being reassigned.
  *
@@ -159,13 +161,13 @@ service cloud.firestore {
      * @path /users/{userId}
      * @allow (create) An authenticated user can create their own user profile document. `auth.uid: 'user_abc'`, `path: /users/user_abc`
      * @allow (get) An authenticated user can read their own profile. `auth.uid: 'user_abc'`, `path: /users/user_abc`
-     * @deny (list) No user can list all user documents in the collection. `auth.uid: 'user_abc'`, `path: /users`
+     * @allow (list) Any authenticated user can list all user documents in the collection. `auth.uid: 'user_abc'`, `path: /users`
      * @deny (update) A user cannot update another user's profile. `auth.uid: 'user_abc'`, `path: /users/user_xyz`
      * @principle Restricts access to a user's own data tree and allows self-creation of a profile.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if false;
+      allow list: if isSignedIn();
       allow create: if isOwner(userId) && hasValidUserDataOnCreate(userId);
       allow update: if isExistingOwner(userId) && hasValidUserDataOnUpdate();
       allow delete: if isExistingOwner(userId);
