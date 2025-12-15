@@ -6,7 +6,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 type AppHeaderProps = {
-  user: User;
+  user: User | null;
 }
 
 const AppHeader = ({ user }: AppHeaderProps) => {
@@ -21,7 +21,8 @@ const AppHeader = ({ user }: AppHeaderProps) => {
     <header className="flex items-center justify-between">
       <div>
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
-          {getGreeting()}, <span className="text-primary">{user.name.split(' ')[0]}</span>.
+          {getGreeting()}
+          {user ? <>, <span className="text-primary">{user.name.split(' ')[0]}</span>.</> : '.'}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">Voici ce qui se passe aujourd'hui.</p>
       </div>
