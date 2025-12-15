@@ -26,7 +26,13 @@ const AppHeader = ({ user, isMobile }: AppHeaderProps) => {
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">Voici le résumé de l'activité.</p>
       </div>
-      {isMobile && <SidebarTrigger asChild><Button variant="ghost" size="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></Button></SidebarTrigger>}
+      {isMobile && (
+        <SidebarTrigger>
+          <Button variant="ghost" size="icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </Button>
+        </SidebarTrigger>
+      )}
     </header>
   )
 }
