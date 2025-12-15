@@ -1,116 +1,136 @@
 "use client"
 
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, FileText, CircleDollarSign } from 'lucide-react'
-import { calculateBalance, formatCurrency } from '@/lib/utils'
-import type { Transaction, Recap, CalendarEvent, UserRole } from '@/lib/definitions'
-import { format, parseISO } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import { Plus, FileText, Calendar, ArrowUpRight, Wand, Mic, ArrowRight, Clock } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
+import type { Transaction, Recap, CalendarEvent, UserRole, User } from '@/lib/definitions'
+import { Badge } from '../ui/badge'
 
 type DashboardViewProps = {
+  user: User
   transactions: Transaction[]
   recaps: Recap[]
   events: CalendarEvent[]
-  onQuickAdd: (modal: 'addRecap' | 'addTransaction') => void
+  onQuickAdd: (modal: 'addTransaction' | 'addEvent') => void
   viewAs: UserRole
 }
 
-const DashboardView = ({ transactions, recaps, events, onQuickAdd, viewAs }: DashboardViewProps) => {
-  const { balance } = calculateBalance(transactions)
+const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, viewAs }: DashboardViewProps) => {
+  const balance = transactions.reduce((acc, tx) => acc + (tx.type === 'BUDGET_ADD' ? tx.amount : -tx.amount), 0)
+  const totalBudget = transactions.filter(t => t.type === 'BUDGET_ADD').reduce((acc, tx) => acc + tx.amount, 0)
   const latestRecap = recaps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
   const upcomingEvent = events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
-        <Card className="bg-neutral-900 dark:bg-black text-white rounded-5xl shadow-2xl overflow-hidden">
-           <CardContent className="p-8 relative min-h-[250px] flex flex-col justify-between">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/30 opacity-20"></div>
-              <div className="relative z-10">
-                <p className="text-lg text-neutral-300">Solde Actuel</p>
-                <p className="text-5xl font-bold tracking-tighter">{formatCurrency(balance, 'EUR')}</p>
-              </div>
-              <div className="relative z-10 flex items-end justify-between">
-                <div>
-                  <p className="text-sm text-neutral-400">Tracklyo Business</p>
-                  <p className="font-mono text-lg tracking-widest">**** **** **** 1234</p>
+      {/* Left Column */}
+      <div className="lg:col-span-1 space-y-6">
+        <Card className="dark bg-card text-card-foreground rounded-4xl shadow-lg h-full flex flex-col">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-yellow-400/20 rounded-lg">
+                  <Wand size={20} className="text-yellow-400" />
                 </div>
-                <div className="text-right">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                </div>
+                <Badge variant="outline" className="border-green-500/50 bg-green-500/10 text-green-300">+12% cette semaine</Badge>
               </div>
-           </CardContent>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-grow flex flex-col justify-center">
+            <p className="text-sm text-muted-foreground">Trésorerie disponible (Est. EUR)</p>
+            <p className="text-6xl font-bold tracking-tighter">{formatCurrency(balance, 'EUR')}</p>
+          </CardContent>
+          <CardFooter className="pt-6 border-t border-white/10 flex justify-between items-center">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase">Budget Total</p>
+              <p className="text-lg font-semibold">{formatCurrency(totalBudget, 'EUR')}</p>
+            </div>
+            <Button size="icon" variant="secondary" className="rounded-full bg-white/10 hover:bg-white/20">
+              <ArrowUpRight />
+            </Button>
+          </CardFooter>
         </Card>
-        <div>
-          <h3 className="font-semibold mb-4 text-xl">Actions Rapides</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-3xl h-20 text-left justify-start items-center gap-4 bg-background/70 backdrop-blur-sm"
-              onClick={() => onQuickAdd('addRecap')}
-              disabled={viewAs === 'PATRON'}
-            >
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
-                <FileText className="text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="font-semibold">Nouveau Rapport</p>
-                <p className="text-sm text-muted-foreground">Ajouter un récapitulatif</p>
-              </div>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-3xl h-20 text-left justify-start items-center gap-4 bg-background/70 backdrop-blur-sm"
-              onClick={() => onQuickAdd('addTransaction')}
-            >
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
-                <CircleDollarSign className="text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="font-semibold">{viewAs === 'PATRON' ? 'Nouveau Budget' : 'Nouvelle Dépense'}</p>
-                <p className="text-sm text-muted-foreground">Enregistrer une transaction</p>
-              </div>
-            </Button>
-          </div>
-        </div>
       </div>
-      <div className="space-y-6">
-        <Card className="rounded-4xl bg-background/70 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle>Dernier Rapport</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {latestRecap ? (
+
+      {/* Right Column */}
+      <div className="lg:col-span-2 space-y-6">
+        <Card className="bg-primary text-primary-foreground rounded-4xl shadow-lg">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-white/20 rounded-lg"><Wand size={20} /></div>
               <div>
-                <p className="font-semibold">{latestRecap.title}</p>
-                <p className="text-sm text-muted-foreground mt-1 truncate">{latestRecap.description}</p>
-                <p className="text-xs text-muted-foreground mt-2">{format(parseISO(latestRecap.date), "PPP", { locale: fr })}</p>
+                <Badge className="bg-white/20 text-white border-none mb-1">NOUVEAU</Badge>
+                <h3 className="text-xl font-bold">Assistant Vocal</h3>
+                <p className="text-sm opacity-80">"J'ai fini le chantier..." Dites-le, l'IA s'occupe de tout noter.</p>
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Aucun rapport récent.</p>
-            )}
+            </div>
+            <Button size="icon" variant="ghost" className="bg-white/20 hover:bg-white/30 rounded-full h-14 w-14">
+              <Mic size={24} />
+            </Button>
           </CardContent>
         </Card>
-        <Card className="rounded-4xl bg-background/70 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle>Prochain Événement</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {upcomingEvent ? (
-              <div>
-                <p className="font-semibold">{upcomingEvent.title}</p>
-                <p className="text-sm text-muted-foreground mt-1">{upcomingEvent.description}</p>
-                <p className="text-xs text-muted-foreground mt-2">{format(parseISO(upcomingEvent.date), "PPP p", { locale: fr })}</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6 flex items-center gap-4" onClick={() => onQuickAdd('addTransaction')}>
+              <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-xl">
+                <Plus className="text-green-600 dark:text-green-400" />
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Aucun événement à venir.</p>
-            )}
-          </CardContent>
-        </Card>
+              <div>
+                <p className="font-semibold">Budget</p>
+                <p className="text-sm text-muted-foreground">Créditer un compte</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6 flex items-center gap-4" onClick={() => onQuickAdd('addEvent')}>
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
+                <Plus className="text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="font-semibold">Événement</p>
+                <p className="text-sm text-muted-foreground">Planifier une date</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <Card className="rounded-4xl shadow-sm">
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2"><FileText size={18} className="text-muted-foreground"/> Dernier rapport</CardTitle>
+              <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full"><ArrowRight size={16} /></Button>
+            </CardHeader>
+            <CardContent>
+              {latestRecap ? (
+                <div>
+                  <p className="font-semibold text-sm">{latestRecap.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1 truncate">{latestRecap.description}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">Aucun rapport</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="rounded-4xl shadow-sm">
+             <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2"><Clock size={18} className="text-muted-foreground" /> Prochainement</CardTitle>
+              <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full"><ArrowRight size={16} /></Button>
+            </CardHeader>
+            <CardContent>
+              {upcomingEvent ? (
+                <div>
+                  <p className="font-semibold text-sm">{upcomingEvent.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{upcomingEvent.description}</p>
+                </div>
+              ) : (
+                 <p className="text-sm text-muted-foreground text-center py-4">Rien à l'agenda</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

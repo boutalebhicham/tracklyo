@@ -3,29 +3,40 @@
 import React from 'react'
 import {
   Sidebar,
-  SidebarHeader,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarTrigger,
+  SidebarMenuButton
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import type { User } from '@/lib/definitions'
-import { LogOut, Plus, Users, CheckCircle2 } from 'lucide-react'
+import type { User, UserRole } from '@/lib/definitions'
+import { Plus, Users, CheckCircle2, LayoutGrid, Wand, Activity, Calendar, Folder, Landmark, LogOut } from 'lucide-react'
+import { Badge } from '../ui/badge'
 
 type AppSidebarProps = {
   currentUser: User
-  viewAs: 'PATRON' | 'RESPONSABLE'
-  setViewAs: (role: 'PATRON' | 'RESPONSABLE') => void
+  viewAs: UserRole
+  setViewAs: (role: UserRole) => void
   responsables: User[]
   selectedResponsable: User
   setSelectedResponsable: (user: User) => void
   onAddCollaborator: () => void
+  activeView: string
+  setActiveView: (view: string) => void
+  onLogout: () => void;
 }
+
+const menuItems = [
+  { id: 'accueil', label: 'Accueil', icon: LayoutGrid },
+  { id: 'ia', label: 'Assistant IA', icon: Wand },
+  { id: 'activite', label: 'Activité', icon: Activity },
+  { id: 'agenda', label: 'Agenda', icon: Calendar },
+  { id: 'fichiers', label: 'Fichiers', icon: Folder },
+  { id: 'budget', label: 'Budget', icon: Landmark },
+];
 
 const AppSidebar = ({
   currentUser,
@@ -35,89 +46,78 @@ const AppSidebar = ({
   selectedResponsable,
   setSelectedResponsable,
   onAddCollaborator,
+  activeView,
+  setActiveView,
+  onLogout
 }: AppSidebarProps) => {
 
-  const handleRoleSwitch = (checked: boolean) => {
-    setViewAs(checked ? 'RESPONSABLE' : 'PATRON')
+  const handleRoleSwitch = () => {
+    setViewAs(viewAs === 'PATRON' ? 'RESPONSABLE' : 'PATRON')
   }
 
+  const handleViewChange = (viewId: string) => {
+    if (viewId === 'budget') {
+      setActiveView('finances');
+    } else {
+      setActiveView(viewId);
+    }
+  };
+
   return (
-    <Sidebar className="border-r-0" variant="sidebar">
-      <SidebarHeader className="p-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary rounded-xl">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary-foreground))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tracklyo</h2>
-          <div className="ml-auto hidden md:block">
-            <SidebarTrigger>
-              <Button variant="ghost" size="icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M4 12H12M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </Button>
-            </SidebarTrigger>
-          </div>
-        </div>
+    <Sidebar className="w-72">
+      <SidebarHeader className="p-6 border-b border-sidebar-border">
+        <h2 className="text-2xl font-bold text-white">Tracklyo.</h2>
       </SidebarHeader>
-      <SidebarContent className="flex flex-col justify-between px-4">
+      <SidebarContent className="flex flex-col justify-between p-4">
         <div>
-          {currentUser.role === 'PATRON' && (
-            <div className="p-4 bg-gray-100 dark:bg-neutral-800 rounded-3xl mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <Label htmlFor="role-switch" className="font-semibold text-base">Vue Patron</Label>
-                <Switch
-                  id="role-switch"
-                  checked={viewAs === 'RESPONSABLE'}
-                  onCheckedChange={handleRoleSwitch}
-                />
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Basculez pour voir votre propre tableau de bord.</p>
-            </div>
-          )}
-
-          {viewAs === 'PATRON' && (
-            <>
-              <p className="px-2 text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">MANAGERS</p>
-              <SidebarMenu>
-                {responsables.map((user) => (
-                  <SidebarMenuItem key={user.id}>
-                    <button
-                      onClick={() => setSelectedResponsable(user)}
-                      className={`flex items-center gap-3 w-full p-3 rounded-2xl text-left transition-colors ${selectedResponsable.id === user.id ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'hover:bg-gray-100 dark:hover:bg-neutral-800'}`}
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-800 dark:text-white">{user.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Responsable</p>
-                      </div>
-                      {selectedResponsable.id === user.id && <CheckCircle2 className="text-primary" size={20} />}
-                    </button>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-              <Button onClick={onAddCollaborator} variant="outline" className="w-full mt-4 rounded-xl gap-2 backdrop-blur-sm bg-background/70">
-                <Plus size={16} /> Ajouter un collaborateur
+          <div className="px-2 pb-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-sidebar-foreground/50 uppercase">SUIVI DE :</p>
+              <Button onClick={onAddCollaborator} variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
+                <Plus size={14} className="mr-1" /> Ajouter
               </Button>
-            </>
-          )}
+            </div>
+            <div className="mt-2 space-y-1">
+              {responsables.map((user) => (
+                <button
+                  key={user.id}
+                  onClick={() => setSelectedResponsable(user)}
+                  className={`flex items-center gap-3 w-full p-2 rounded-lg text-left transition-colors ${selectedResponsable.id === user.id ? 'bg-black/20' : 'hover:bg-black/10'}`}
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <p className="font-semibold text-sm text-white">{user.name}</p>
+                  {selectedResponsable.id === user.id && <div className="w-2 h-2 rounded-full bg-primary ml-auto" />}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <SidebarMenu className="mt-4">
+            {menuItems.map((item) => (
+              <SidebarMenuItem key={item.id}>
+                <SidebarMenuButton
+                  onClick={() => handleViewChange(item.id)}
+                  isActive={activeView === item.id || (activeView === 'finances' && item.id === 'budget')}
+                  className="w-full justify-start text-base font-medium h-12"
+                >
+                  <item.icon size={20} />
+                  <span>{item.label}</span>
+                   {activeView === item.id && <div className="w-2 h-2 rounded-full bg-white ml-auto" />}
+                   {item.id === 'ia' && <Badge className="ml-auto bg-primary/20 text-primary border-primary/30">Nouveau</Badge>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
         </div>
 
-        <SidebarFooter className="mt-auto p-0">
-          <div className="p-3 bg-gray-100 dark:bg-neutral-800/50 rounded-3xl flex items-center gap-3">
-             <Avatar className="h-12 w-12">
-                <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <p className="font-bold text-gray-800 dark:text-white">{currentUser.name}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{currentUser.role === 'PATRON' ? 'Directeur' : 'Responsable'}</p>
-              </div>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <LogOut size={20}/>
-              </Button>
-          </div>
+        <SidebarFooter className="mt-auto p-2">
+           <Button onClick={handleRoleSwitch} variant="ghost" className="w-full justify-center h-12 text-base">
+                <LogOut size={20} className="mr-2 -scale-x-100" />
+                Changer de Rôle
+            </Button>
         </SidebarFooter>
       </SidebarContent>
     </Sidebar>

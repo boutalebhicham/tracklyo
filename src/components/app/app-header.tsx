@@ -2,15 +2,14 @@
 
 import React from 'react'
 import type { User } from '@/lib/definitions'
-import { SidebarTrigger } from '@/components/ui/sidebar'
-import { Button } from '@/components/ui/button'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
 
 type AppHeaderProps = {
   user: User;
-  isMobile: boolean;
 }
 
-const AppHeader = ({ user, isMobile }: AppHeaderProps) => {
+const AppHeader = ({ user }: AppHeaderProps) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Bonjour";
@@ -21,18 +20,15 @@ const AppHeader = ({ user, isMobile }: AppHeaderProps) => {
   return (
     <header className="flex items-center justify-between">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-          {getGreeting()}, {user.name.split(' ')[0]}
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
+          {getGreeting()}, <span className="text-primary">{user.name.split(' ')[0]}</span>.
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Voici le résumé de l'activité.</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Voici ce qui se passe aujourd'hui.</p>
       </div>
-      {isMobile && (
-        <SidebarTrigger>
-          <Button variant="ghost" size="icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </Button>
-        </SidebarTrigger>
-      )}
+      <div className="hidden sm:flex items-center gap-2 bg-card p-2 rounded-full">
+        <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />
+        <p className="text-sm font-medium text-foreground">{format(new Date(), 'eeee d MMMM', { locale: fr })}</p>
+      </div>
     </header>
   )
 }

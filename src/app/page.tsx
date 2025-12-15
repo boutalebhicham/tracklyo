@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { initialUsers, initialTransactions, initialRecaps, initialComments, initialEvents } from '@/lib/data';
-import type { User, Transaction, Recap, CalendarEvent, Currency } from '@/lib/definitions';
+import { initialUsers, initialTransactions, initialRecaps, initialEvents } from '@/lib/data';
+import type { User, Transaction, Recap, CalendarEvent } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
 import DashboardView from '@/components/app/dashboard-view';
@@ -11,9 +11,8 @@ import ActivityView from '@/components/app/activity-view';
 import CalendarView from '@/components/app/calendar-view';
 import WhatsAppFab from '@/components/app/whatsapp-fab';
 import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal } from '@/components/app/modals';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { initialComments } from '@/lib/data';
 
 export default function Home() {
   const [users, setUsers] = useState<User[]>(initialUsers);
@@ -27,13 +26,12 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<User>(patron);
   const [viewAs, setViewAs] = useState<'PATRON' | 'RESPONSABLE'>('PATRON');
   const [selectedResponsable, setSelectedResponsable] = useState<User>(responsables[0]);
+  const [activeView, setActiveView] = useState('accueil');
 
   const [modal, setModal] = useState<string | null>(null);
 
-  const isMobile = useIsMobile();
-  
   const handleAddCollaborator = () => {
-    if (responsables.length >= 1) {
+    if (responsables.length >= 2) { // Allow 2 responsables before paywall
       setModal('paywall');
     } else {
       setModal('addUser');
@@ -63,9 +61,52 @@ export default function Home() {
 
   const whatsAppTarget = viewAs === 'PATRON' ? selectedResponsable : patron;
 
+  const renderContent = () => {
+    switch(activeView) {
+      case 'accueil':
+        return (
+          <DashboardView
+            user={activeUser}
+            transactions={filteredTransactions}
+            recaps={filteredRecaps}
+            events={filteredEvents}
+            onQuickAdd={(type) => setModal(type)}
+            viewAs={viewAs}
+          />
+        );
+      case 'finances':
+        return (
+          <FinancesView 
+            transactions={filteredTransactions} 
+            onAddTransaction={() => setModal('addTransaction')}
+            viewAs={viewAs}
+          />
+        );
+      case 'activite':
+        return (
+          <ActivityView
+            recaps={filteredRecaps}
+            comments={initialComments}
+            users={users}
+            onAddRecap={() => setModal('addRecap')}
+            viewAs={viewAs}
+          />
+        );
+      case 'agenda':
+        return (
+          <CalendarView 
+            events={filteredEvents} 
+            onAddEvent={() => setModal('addEvent')} 
+          />
+        );
+      default:
+        return <DashboardView user={activeUser} transactions={filteredTransactions} recaps={filteredRecaps} events={filteredEvents} onQuickAdd={(type) => setModal(type)} viewAs={viewAs} />;
+    }
+  }
+
   return (
     <SidebarProvider>
-      <div className="flex w-full min-h-screen">
+      <div className="flex w-full min-h-screen bg-background">
         <AppSidebar
           currentUser={currentUser}
           viewAs={viewAs}
@@ -74,54 +115,16 @@ export default function Home() {
           selectedResponsable={selectedResponsable}
           setSelectedResponsable={setSelectedResponsable}
           onAddCollaborator={handleAddCollaborator}
+          activeView={activeView}
+          setActiveView={setActiveView}
+          onLogout={() => console.log('logout')}
         />
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6 lg:p-8">
-            <AppHeader user={activeUser} isMobile={isMobile} />
-            
-            <Tabs defaultValue="dashboard" className="mt-6">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-background/70 dark:bg-neutral-900/70 backdrop-blur-sm rounded-2xl p-1.5 h-auto">
-                <TabsTrigger value="dashboard" className="rounded-xl">Dashboard</TabsTrigger>
-                <TabsTrigger value="finances" className="rounded-xl">Finances</TabsTrigger>
-                <TabsTrigger value="activity" className="rounded-xl">Activité</TabsTrigger>
-                <TabsTrigger value="calendar" className="rounded-xl">Agenda</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="dashboard" className="mt-6">
-                <DashboardView
-                  transactions={filteredTransactions}
-                  recaps={filteredRecaps}
-                  events={filteredEvents}
-                  onQuickAdd={(type) => setModal(type)}
-                  viewAs={viewAs}
-                />
-              </TabsContent>
-
-              <TabsContent value="finances" className="mt-6">
-                <FinancesView 
-                  transactions={filteredTransactions} 
-                  onAddTransaction={() => setModal('addTransaction')}
-                  viewAs={viewAs}
-                />
-              </TabsContent>
-
-              <TabsContent value="activity" className="mt-6">
-                <ActivityView
-                  recaps={filteredRecaps}
-                  comments={initialComments}
-                  users={users}
-                  onAddRecap={() => setModal('addRecap')}
-                  viewAs={viewAs}
-                />
-              </TabsContent>
-              
-              <TabsContent value="calendar" className="mt-6">
-                <CalendarView 
-                  events={filteredEvents} 
-                  onAddEvent={() => setModal('addEvent')} 
-                />
-              </TabsContent>
-            </Tabs>
+            <AppHeader user={activeUser} />
+            <div className="mt-6">
+              {renderContent()}
+            </div>
           </div>
         </main>
       </div>
