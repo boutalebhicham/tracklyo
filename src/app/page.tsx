@@ -7,15 +7,16 @@ import { useUser, useAuth, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
-import type { User, Transaction, Recap, CalendarEvent, Comment } from '@/lib/definitions';
+import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
 import DashboardView from '@/components/app/dashboard-view';
 import FinancesView from '@/components/app/finances-view';
 import ActivityView from '@/components/app/activity-view';
 import CalendarView from '@/components/app/calendar-view';
+import FilesView from '@/components/app/files-view';
 import WhatsAppFab from '@/components/app/whatsapp-fab';
-import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal } from '@/components/app/modals';
+import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal } from '@/components/app/modals';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useFirestore } from '@/firebase';
 import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -88,6 +89,9 @@ export default function Home() {
 
   const eventsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'events')) : null, [firestore, authorId]);
   const { data: events } = useCollection<CalendarEvent>(eventsQuery);
+
+  const documentsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'documents')) : null, [firestore, authorId]);
+  const { data: documents } = useCollection<DocumentFile>(documentsQuery);
   
   const commentsQuery = useMemoFirebase(() => {
     if (!authorId || !recaps?.length) return null;
@@ -146,9 +150,20 @@ export default function Home() {
     setModal(null);
   }
 
+  const handleAddDocument = (newDocument: Omit<DocumentFile, 'id' | 'authorId' | 'date'>) => {
+    if (!authorId) return;
+    const ref = collection(firestore, 'users', authorId, 'documents');
+    addDocumentNonBlocking(ref, { 
+        ...newDocument,
+        authorId,
+        date: new Date().toISOString()
+     });
+    setModal(null);
+  };
+
   const whatsAppTarget = viewAs.toUpperCase() === 'PATRON' ? selectedResponsable : currentUserData;
   
-  if (isUserLoading || !user || !currentUserData || !responsables) {
+  if (isUserLoading || !user || !currentUserData || (currentUserData.role.toUpperCase() === 'PATRON' && !responsables) ) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement...</p>
@@ -183,7 +198,7 @@ export default function Home() {
           <ActivityView
             recaps={recaps || []}
             comments={comments || []}
-            users={[...responsables, currentUserData]}
+            users={responsables ? [...responsables, currentUserData] : [currentUserData]}
             onAddRecap={() => setModal('addRecap')}
             viewAs={viewAs}
             currentUser={currentUserData}
@@ -195,6 +210,13 @@ export default function Home() {
           <CalendarView 
             events={events || []} 
             onAddEvent={() => setModal('addEvent')} 
+          />
+        );
+      case 'fichiers':
+        return (
+          <FilesView 
+            documents={documents || []} 
+            onAddDocument={() => setModal('addDocument')}
           />
         );
       default:
@@ -213,7 +235,7 @@ export default function Home() {
         />
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6 lg:p-8">
-            <AppHeader user={activeUser!} />
+            <AppHeader user={activeUser} />
             <div className="mt-6">
               {renderContent()}
             </div>
@@ -243,6 +265,12 @@ export default function Home() {
         isOpen={modal === 'addEvent'}
         onClose={() => setModal(null)}
         onAddEvent={handleAddEvent}
+        authorId={authorId!}
+      />
+      <AddDocumentModal
+        isOpen={modal === 'addDocument'}
+        onClose={() => setModal(null)}
+        onAddDocument={handleAddDocument}
         authorId={authorId!}
       />
     </SidebarProvider>

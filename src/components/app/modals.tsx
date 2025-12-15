@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -15,10 +16,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType } from '@/lib/definitions';
+import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Image as ImageIcon, Video, Mic } from 'lucide-react';
+import { Image as ImageIcon, Video, Mic, Upload } from 'lucide-react';
 
 type ModalProps = {
   isOpen: boolean;
@@ -240,6 +241,62 @@ export const AddEventModal = ({ isOpen, onClose, onAddEvent, authorId }: ModalPr
                     <div className="space-y-2"><Label htmlFor="event-desc">Description</Label><Textarea id="event-desc" value={description} onChange={e => setDescription(e.target.value)} className="rounded-xl"/></div>
                 </div>
                 <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Planifier</Button></DialogFooter>
+            </GlassDialogContent>
+        </Dialog>
+    )
+}
+
+export const AddDocumentModal = ({ isOpen, onClose, onAddDocument, authorId }: ModalProps & { onAddDocument: (doc: Omit<DocumentFile, 'id'>) => void, authorId: string }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (event.target.files && event.target.files[0]) {
+        setFile(event.target.files[0]);
+      }
+    };
+
+    const handleSubmit = () => {
+        if(file) {
+            onAddDocument({ 
+                authorId, 
+                name: file.name, 
+                type: file.type || 'inconnu', 
+                size: `${(file.size / (1024*1024)).toFixed(2)} MB`,
+                date: new Date().toISOString() 
+            });
+            setFile(null);
+            onClose();
+        }
+    }
+
+    const resetAndClose = () => {
+        setFile(null);
+        onClose();
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={resetAndClose}>
+            <GlassDialogContent>
+                <DialogHeader>
+                    <DialogTitle className="text-center">Uploader un document</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-6">
+                    <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex flex-col items-center justify-center text-center p-10 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                        <p className="mt-2 text-sm font-semibold">{file ? file.name : "Sélectionner un fichier"}</p>
+                        <p className="text-xs text-muted-foreground">{file ? `${(file.size / (1024*1024)).toFixed(2)} MB` : "ou glissez-déposez"}</p>
+                    </div>
+                    <Input type="file" onChange={handleFileChange} ref={fileInputRef} className="hidden" />
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleSubmit} className="w-full rounded-xl" disabled={!file}>
+                        Envoyer le fichier
+                    </Button>
+                </DialogFooter>
             </GlassDialogContent>
         </Dialog>
     )
