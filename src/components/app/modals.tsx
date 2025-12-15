@@ -200,13 +200,13 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
                       <span className="text-sm font-medium ml-2">Ajouter à votre publication</span>
                       <div className="flex items-center">
                         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => fileInputRef.current?.click()}>
-                          <ImageIcon className="text-green-500" />
+                          <ImageIcon className="text-primary" />
                         </Button>
                         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => fileInputRef.current?.click()}>
-                          <Video className="text-blue-500" />
+                          <Video className="text-primary" />
                         </Button>
                         <Button variant="ghost" size="icon" className="rounded-full">
-                          <Mic className="text-red-500" />
+                          <Mic className="text-primary" />
                         </Button>
                       </div>
                     </div>
