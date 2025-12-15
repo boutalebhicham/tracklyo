@@ -18,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Image as ImageIcon, Video, Mic } from 'lucide-react';
 
 type ModalProps = {
   isOpen: boolean;
@@ -141,6 +142,7 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
     const [description, setDescription] = useState('');
     const [type, setType] = useState<RecapType>('DAILY');
     const [mediaFile, setMediaFile] = useState<File | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       if (event.target.files && event.target.files[0]) {
@@ -149,8 +151,8 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
     };
 
     const handleSubmit = () => {
-        if(title && description) {
-            const recapData: Omit<Recap, 'id'> = { authorId, title, description, type, date: new Date().toISOString() };
+        if(description) { // Title is now optional
+            const recapData: Omit<Recap, 'id'> = { authorId, title: title || 'Rapport du jour', description, type, date: new Date().toISOString() };
             if (mediaFile) {
               recapData.mediaUrl = URL.createObjectURL(mediaFile);
               recapData.mediaType = mediaFile.type.startsWith('image/') ? 'image' : 'video';
@@ -163,25 +165,54 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
         }
     }
 
+    const resetAndClose = () => {
+      setTitle('');
+      setDescription('');
+      setMediaFile(null);
+      onClose();
+    }
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={resetAndClose}>
             <GlassDialogContent>
-                <DialogHeader><DialogTitle>Nouveau récapitulatif</DialogTitle></DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2"><Label htmlFor="title">Titre</Label><Input id="title" value={title} onChange={e => setTitle(e.target.value)} className="rounded-xl" /></div>
-                    <div className="space-y-2"><Label>Type</Label>
-                        <RadioGroup defaultValue="DAILY" onValueChange={(v: RecapType) => setType(v)} className="flex gap-4">
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="DAILY" id="r1" /><Label htmlFor="r1">Journalier</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="WEEKLY" id="r2" /><Label htmlFor="r2">Hebdomadaire</Label></div>
-                        </RadioGroup>
-                    </div>
-                    <div className="space-y-2"><Label htmlFor="description">Description</Label><Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="rounded-xl" /></div>
+                <DialogHeader>
+                    <DialogTitle className="text-center">Créer une publication</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
                     <div className="space-y-2">
-                      <Label htmlFor="media">Ajouter une photo ou vidéo</Label>
-                      <Input id="media" type="file" accept="image/*,video/*" onChange={handleFileChange} className="rounded-xl file:text-primary file:font-semibold" />
+                        <Label htmlFor="title" className="sr-only">Titre</Label>
+                        <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="Titre de votre rapport (optionnel)" className="rounded-xl bg-transparent border-0 text-lg focus-visible:ring-0 focus-visible:ring-offset-0" />
                     </div>
+                    
+                    <div className="space-y-2">
+                        <Label htmlFor="description" className="sr-only">Description</Label>
+                        <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Quel est le programme aujourd'hui ?" className="rounded-xl min-h-[120px] bg-transparent border-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0" />
+                    </div>
+
+                    {mediaFile && (
+                      <div className="text-sm text-muted-foreground">
+                        Fichier sélectionné: {mediaFile.name}
+                      </div>
+                    )}
                 </div>
-                <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Ajouter</Button></DialogFooter>
+                <DialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-2">
+                    <div className="flex justify-between items-center p-2 border rounded-xl">
+                      <span className="text-sm font-medium ml-2">Ajouter à votre publication</span>
+                      <div className="flex items-center">
+                        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => fileInputRef.current?.click()}>
+                          <ImageIcon className="text-green-500" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => fileInputRef.current?.click()}>
+                          <Video className="text-blue-500" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="rounded-full">
+                          <Mic className="text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                    <Button onClick={handleSubmit} className="w-full rounded-xl" disabled={!description}>Publier</Button>
+                </DialogFooter>
+                <Input type="file" accept="image/*,video/*" onChange={handleFileChange} ref={fileInputRef} className="hidden" />
             </GlassDialogContent>
         </Dialog>
     )

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Plus, MessageSquare, Send } from 'lucide-react'
+import { Plus, MessageSquare, Send, Camera } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useFirestore } from '@/firebase'
@@ -51,14 +51,28 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, viewAs, currentUser
             <h2 className="text-2xl font-bold">Activité</h2>
             <p className="text-muted-foreground">Fil d'actualité et échanges</p>
         </div>
-        {viewAs.toUpperCase() === 'RESPONSABLE' && (
-          <Button onClick={onAddRecap} className="rounded-xl gap-2">
-            <Plus size={16} /> Publier
-          </Button>
-        )}
       </div>
       
       <div className="max-w-3xl mx-auto space-y-6">
+        {viewAs.toUpperCase() === 'RESPONSABLE' && (
+          <Card className="rounded-4xl shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback>{currentUser?.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <button onClick={onAddRecap} className="flex-1 text-left bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors px-4 py-3 rounded-full">
+                  <span className="text-muted-foreground">Publier un nouveau rapport...</span>
+                </button>
+                <Button onClick={onAddRecap} variant="ghost" size="icon" className="rounded-full">
+                  <Camera size={20} />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {sortedRecaps.length === 0 ? (
           <div className="text-center py-16 px-6 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-4xl">
               <div className="inline-block bg-gray-100 dark:bg-gray-800 p-4 rounded-full">
