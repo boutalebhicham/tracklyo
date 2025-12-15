@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['"Plus Jakarta Sans"', 'sans-serif'],
+        headline: ['"Plus Jakarta Sans"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -68,8 +68,10 @@ export default {
       },
       borderRadius: {
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 4px)',
+        sm: 'calc(var(--radius) - 8px)',
+        '4xl': '2rem',
+        '5xl': '2.5rem',
       },
       keyframes: {
         'accordion-down': {
