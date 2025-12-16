@@ -36,14 +36,31 @@ const CollaboratorSwitcher: React.FC<CollaboratorSwitcherProps> = ({
   const activeUser = allUsers.find(u => u.id === activeCollaboratorId);
   const isMobile = useIsMobile();
 
+  // If activeUser is not yet available (e.g., during initial load),
+  // render a placeholder or nothing to prevent crash.
+  if (!activeUser) {
+    return (
+        <div className={cn(!isMobile && "px-2 space-y-2")}>
+            {!isMobile && (
+                <h3 className="text-xs font-semibold uppercase text-sidebar-foreground/60 tracking-wider px-2">
+                    Suivi de :
+                </h3>
+            )}
+            <Button onClick={onAddCollaborator} variant={isMobile ? "outline" : "ghost"} className="w-full h-12 justify-start p-2 rounded-xl text-left hover:bg-black/20 text-sidebar-foreground/80">
+                <Plus size={16} className="mr-2"/> Ajouter
+            </Button>
+        </div>
+    );
+  }
+
   const desktopTrigger = (
      <Button variant="ghost" className="w-full h-auto justify-between items-center p-2 rounded-xl text-left hover:bg-black/20">
         <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
-                <AvatarImage src={activeUser!.avatar} alt={activeUser!.name} />
-                <AvatarFallback>{activeUser!.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarImage src={activeUser.avatar} alt={activeUser.name} />
+                <AvatarFallback>{activeUser.name.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium flex-1 truncate text-white">{activeUser!.name}</span>
+            <span className="text-sm font-medium flex-1 truncate text-white">{activeUser.name}</span>
         </div>
         <ChevronsUpDown className="h-4 w-4 text-sidebar-foreground/60" />
     </Button>
@@ -52,12 +69,12 @@ const CollaboratorSwitcher: React.FC<CollaboratorSwitcherProps> = ({
   const mobileTrigger = (
       <Button variant="ghost" className="h-auto p-1.5 rounded-full flex items-center gap-2 bg-slate-100 dark:bg-slate-800">
         <Avatar className="h-8 w-8">
-            <AvatarImage src={activeUser!.avatar} alt={activeUser!.name} />
-            <AvatarFallback>{activeUser!.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={activeUser.avatar} alt={activeUser.name} />
+            <AvatarFallback>{activeUser.name.substring(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="text-left">
             <p className="text-xs text-muted-foreground">SUIVI DE</p>
-            <p className="font-bold text-sm leading-tight">{activeUser!.name.split(' ')[0]}</p>
+            <p className="font-bold text-sm leading-tight">{activeUser.name.split(' ')[0]}</p>
         </div>
         <ChevronsUpDown className="h-4 w-4 text-muted-foreground ml-1" />
       </Button>
@@ -73,13 +90,7 @@ const CollaboratorSwitcher: React.FC<CollaboratorSwitcherProps> = ({
         
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                {activeUser ? (
-                    isMobile ? mobileTrigger : desktopTrigger
-                ) : (
-                    <Button onClick={onAddCollaborator} variant={isMobile ? "outline" : "ghost"} className="w-full h-12 justify-start p-2 rounded-xl text-left hover:bg-black/20 text-sidebar-foreground/80">
-                        <Plus size={16} className="mr-2"/> Ajouter
-                    </Button>
-                )}
+                {isMobile ? mobileTrigger : desktopTrigger}
             </DropdownMenuTrigger>
             <DropdownMenuContent 
               className={cn(isMobile ? "w-screen max-w-xs rounded-xl" : "w-64 rounded-xl bg-sidebar-border border-sidebar-border text-sidebar-foreground p-2")}
