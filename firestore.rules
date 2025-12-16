@@ -12,11 +12,11 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get, update, delete: if isOwner(userId);
+      // Users can read/write their own profile
+      allow read, write: if isOwner(userId);
       allow create: if isSignedIn() && request.resource.data.id == userId;
-      allow list: if isSignedIn();
 
-      // Projects are owned by the user.
+      // Users can list their own projects
       match /projects/{projectId} {
         allow read, write: if isOwner(userId);
 
@@ -42,6 +42,12 @@ service cloud.firestore {
           allow read, write: if isOwner(userId);
         }
       }
+    }
+    
+    // This rule allows any signed-in user to list all users.
+    // This is useful for features like collaborator selection.
+    match /users/{userId} {
+        allow list: if isSignedIn();
     }
   }
 }
