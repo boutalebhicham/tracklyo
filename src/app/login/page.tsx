@@ -153,13 +153,13 @@ export default function LoginPage() {
                     >
                       <div>
                         <RadioGroupItem value="PATRON" id="patron" className="peer sr-only" />
-                        <Label htmlFor="patron" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                        <Label htmlFor="patron" className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent/50 peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                           Compte de gestion
                         </Label>
                       </div>
                       <div>
                         <RadioGroupItem value="RESPONSABLE" id="responsable" className="peer sr-only" />
-                        <Label htmlFor="responsable" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                        <Label htmlFor="responsable" className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent/50 peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                           Compte collaborateur
                         </Label>
                       </div>
