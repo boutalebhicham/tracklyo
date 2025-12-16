@@ -22,7 +22,9 @@ service cloud.firestore {
 
 
       // Generic rule for all user subcollections EXCEPT 'todos'
-      match /{subcollection}/{docId} {
+      match /{subcollection}/{docId}
+        where subcollection != 'todos' {
+        
         // READ (get, list) rule for all subcollections
         allow read: if request.auth != null && (
           request.auth.uid == userId ||
