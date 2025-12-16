@@ -16,9 +16,12 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.id == userId;
       allow list: if isSignedIn();
 
+      // Users can list their own projects
+      allow get, list on /databases/$(database)/documents/users/$(userId)/projects;
+
       // Projects are owned by the user.
       match /projects/{projectId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isOwner(userId);
 
         // All project-specific data is nested under the project.
         // Access is granted if the user owns the parent project.
