@@ -14,7 +14,7 @@ const auth = admin.auth();
 export async function POST(request: Request) {
   try {
     const authorization = request.headers.get('Authorization');
-    if (!authorization?.startsWith('Bearer ')) {
+    if (!authorization || !authorization.startsWith('Bearer ')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       id: userRecord.uid,
       name,
       email,
-      role: 'RESPONSABLE',
+      role: 'RESPONSABLE', // Collaborators are created with RESPONSABLE role
       managerId: managerUid,
       avatar: `https://picsum.photos/seed/${userRecord.uid}/100/100`,
       phoneNumber: '',

@@ -10,7 +10,7 @@
         "id": { "type": "string", "description": "Unique identifier for the user entity." },
         "name": { "type": "string", "description": "The user's full name." },
         "email": { "type": "string", "description": "The user's email address.", "format": "email" },
-        "role": { "type": "string", "enum": ["PATRON", "RESPONSABLE"], "description": "The user's role within the application." },
+        "role": { "type": "string", "enum": ["PATRON", "RESPONSABLE"], "description": "The user's role. PATRON is a manager, RESPONSABLE is a collaborator." },
         "avatar": { "type": "string", "description": "URL of the user's profile picture." },
         "phoneNumber": { "type": "string", "description": "The user's phone number for WhatsApp integration." },
         "managerId": { "type": "string", "description": "The ID of the manager (PATRON) for this user, if applicable." }
