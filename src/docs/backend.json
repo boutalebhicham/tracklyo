@@ -1,0 +1,152 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user within the Tracklyo application. A 'PATRON' is a manager, and a 'RESPONSABLE' is a collaborator.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the user entity." },
+        "name": { "type": "string", "description": "The user's full name." },
+        "email": { "type": "string", "description": "The user's email address.", "format": "email" },
+        "role": { "type": "string", "enum": ["PATRON", "RESPONSABLE"], "description": "The user's role. PATRON is a manager, RESPONSABLE is a collaborator." },
+        "avatar": { "type": "string", "description": "URL of the user's profile picture." },
+        "phoneNumber": { "type": "string", "description": "The user's phone number for WhatsApp integration." },
+        "managerId": { "type": "string", "description": "The ID of the manager (PATRON) for this user, if applicable." }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a financial transaction for a specific project.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the transaction entity." },
+        "amount": { "type": "number", "description": "Amount of the transaction." },
+        "reason": { "type": "string", "description": "Reason for the transaction." },
+        "date": { "type": "string", "description": "Date of the transaction.", "format": "date-time" },
+        "type": { "type": "string", "enum": ["BUDGET_ADD", "EXPENSE"], "description": "Type of transaction." },
+        "currency": { "type": "string", "enum": ["EUR", "USD", "XOF"], "description": "Currency of the transaction." },
+        "authorId": { "type": "string", "description": "Reference to User." }
+      },
+      "required": ["id", "amount", "reason", "date", "type", "currency", "authorId"]
+    },
+    "Recap": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Recap",
+      "type": "object",
+      "description": "Represents an activity recap created by a RESPONSABLE user for a specific project.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the recap entity." },
+        "title": { "type": "string", "description": "Title of the activity recap." },
+        "type": { "type": "string", "enum": ["DAILY", "WEEKLY"], "description": "Type of recap." },
+        "description": { "type": "string", "description": "Detailed description of the activity recap." },
+        "date": { "type": "string", "description": "Date of the activity recap.", "format": "date-time" },
+        "authorId": { "type": "string", "description": "Reference to User." }
+      },
+      "required": ["id", "title", "type", "description", "date", "authorId"]
+    },
+     "Comment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Comment",
+      "type": "object",
+      "description": "Represents a comment on a recap.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the comment entity." },
+        "recapId": { "type": "string", "description": "Reference to Recap." },
+        "authorId": { "type": "string", "description": "Reference to User." },
+        "content": { "type": "string", "description": "Content of the comment." },
+        "date": { "type": "string", "description": "Date of the comment.", "format": "date-time" }
+      },
+      "required": ["id", "recapId", "authorId", "content", "date"]
+    },
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
+      "type": "object",
+      "description": "Represents a calendar event for a specific project.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the event entity." },
+        "title": { "type": "string", "description": "Title of the calendar event." },
+        "description": { "type": "string", "description": "Description of the calendar event." },
+        "date": { "type": "string", "description": "Date and time of the calendar event.", "format": "date-time" },
+        "authorId": { "type": "string", "description": "Reference to User." }
+      },
+      "required": ["id", "title", "description", "date", "authorId"]
+    },
+    "Document": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Document",
+      "type": "object",
+      "description": "Represents a document for a specific project.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the document entity." },
+        "name": { "type": "string", "description": "Name of the document." },
+        "type": { "type": "string", "description": "Type of document." },
+        "date": { "type": "string", "description": "Upload date of the document.", "format": "date-time" },
+        "authorId": { "type": "string", "description": "Reference to User." },
+        "size": { "type": "string", "description": "Size of the document." }
+      },
+      "required": ["id", "name", "type", "date", "authorId", "size"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "Stores user profiles."
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": { "$ref": "#/backend/entities/Transaction" },
+          "description": "Stores transactions for a specific user."
+        }
+      },
+      {
+        "path": "/users/{userId}/recaps/{recapId}",
+        "definition": {
+          "entityName": "Recap",
+          "schema": { "$ref": "#/backend/entities/Recap" },
+          "description": "Stores recaps for a specific user."
+        }
+      },
+       {
+        "path": "/users/{userId}/recaps/{recapId}/comments/{commentId}",
+        "definition": {
+          "entityName": "Comment",
+          "schema": { "$ref": "#/backend/entities/Comment" },
+          "description": "Stores comments for a specific recap."
+        }
+      },
+      {
+        "path": "/users/{userId}/events/{eventId}",
+        "definition": {
+          "entityName": "Event",
+          "schema": { "$ref": "#/backend/entities/Event" },
+          "description": "Stores events for a specific user."
+        }
+      },
+      {
+        "path": "/users/{userId}/documents/{documentId}",
+        "definition": {
+          "entityName": "Document",
+          "schema": { "$ref": "#/backend/entities/Document" },
+          "description": "Stores documents for a specific user."
+        }
+      }
+    ]
+  }
+}

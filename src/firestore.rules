@@ -17,7 +17,6 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if isOwner(userId) || isManagerOf(userId);
 
-      // Autorise la lecture (list) et l'écriture sur les sous-collections.
       match /{subcollection}/{docId} {
         allow read, write: if isOwner(userId) || isManagerOf(userId);
       }

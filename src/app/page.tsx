@@ -7,7 +7,7 @@ import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
-import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile, AddUserForm, Todo } from '@/lib/definitions';
+import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile, AddUserForm } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
 import DashboardView from '@/components/app/dashboard-view';
@@ -15,9 +15,8 @@ import FinancesView from '@/components/app/finances-view';
 import ActivityView from '@/components/app/activity-view';
 import CalendarView from '@/components/app/calendar-view';
 import FilesView from '@/components/app/files-view';
-import TodosView from '@/components/app/todos-view';
 import WhatsAppFab from '@/components/app/whatsapp-fab';
-import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal, AddTodoModal } from '@/components/app/modals';
+import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal } from '@/components/app/modals';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
@@ -90,9 +89,6 @@ export default function Home() {
 
   const documentsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'documents')) : null, [firestore, authorId]);
   const { data: documents } = useCollection<DocumentFile>(documentsQuery);
-
-  const todosQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'todos')) : null, [firestore, authorId]);
-  const { data: todos } = useCollection<Todo>(todosQuery);
   
   const commentsQuery = useMemoFirebase(() => {
     if (!authorId || !recaps || recaps.length === 0) return null;
@@ -134,31 +130,6 @@ export default function Home() {
     setModal(null);
   };
 
-  const handleAddTodo = (task: string) => {
-    if (!authorId || !authUser) return;
-    const ref = collection(firestore, 'users', authorId, 'todos');
-    addDocumentNonBlocking(ref, {
-      task,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      authorId: authorId,
-      createdBy: authUser.uid,
-    });
-    setModal(null);
-  }
-
-  const handleToggleTodoStatus = (todoId: string, currentStatus: 'pending' | 'completed') => {
-    if (!authorId) return;
-    const ref = doc(firestore, 'users', authorId, 'todos', todoId);
-    updateDoc(ref, { status: currentStatus === 'pending' ? 'completed' : 'pending' });
-  }
-
-  const handleDeleteTodo = (todoId: string) => {
-    if (!authorId) return;
-    const ref = doc(firestore, 'users', authorId, 'todos', todoId);
-    deleteDocumentNonBlocking(ref);
-  }
-  
   const handleAddUser = async (newUser: AddUserForm) => {
     if (!authUser) return;
     setModal(null);
@@ -265,16 +236,6 @@ export default function Home() {
             authorId={authorId!}
           />
         );
-      case 'taches':
-        return (
-          <TodosView 
-            todos={todos || []}
-            onAddTodo={() => setModal('addTodo')}
-            onToggleTodo={handleToggleTodoStatus}
-            onDeleteTodo={handleDeleteTodo}
-            canManage={loggedInUserData.role === 'PATRON'}
-          />
-        );
       case 'agenda':
         return (
           <CalendarView 
@@ -357,11 +318,6 @@ export default function Home() {
         onClose={() => setModal(null)}
         onAddDocument={handleAddDocument}
         authorId={authorId!}
-      />
-      <AddTodoModal 
-        isOpen={modal === 'addTodo'}
-        onClose={() => setModal(null)}
-        onAddTodo={handleAddTodo}
       />
     </SidebarProvider>
   );

@@ -4,7 +4,6 @@ export type Currency = 'EUR' | 'USD' | 'XOF';
 export type TransactionType = 'BUDGET_ADD' | 'EXPENSE';
 export type RecapType = 'DAILY' | 'WEEKLY';
 export type UserRole = 'PATRON' | 'RESPONSABLE';
-export type TodoStatus = 'pending' | 'completed';
 
 export interface User {
   id: string;
@@ -72,13 +71,4 @@ export interface DocumentFile {
   type: string; // e.g., 'PDF', 'Image'
   date: string;
   size: string; // e.g., '2.5MB'
-}
-    
-export interface Todo {
-  id: string;
-  task: string;
-  status: TodoStatus;
-  createdAt: string;
-  authorId: string; // User this task is for
-  createdBy: string; // User who created the task (manager)
 }

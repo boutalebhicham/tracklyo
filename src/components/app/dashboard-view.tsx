@@ -5,7 +5,7 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, FileText, Calendar, ArrowUpRight, Wand, Mic, ArrowRight, Clock, LogIn, LogOut, ListTodo } from 'lucide-react'
+import { Plus, FileText, Calendar, ArrowUpRight, Wand, Mic, ArrowRight, Clock, LogIn, LogOut } from 'lucide-react'
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils'
 import type { Transaction, Recap, CalendarEvent, User } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
@@ -15,7 +15,7 @@ type DashboardViewProps = {
   transactions: Transaction[]
   recaps: Recap[]
   events: CalendarEvent[]
-  onQuickAdd: (modal: 'addTransaction' | 'addEvent' | 'addTodo') => void
+  onQuickAdd: (modal: 'addTransaction' | 'addEvent') => void
   setActiveView: (view: string) => void;
 }
 
@@ -62,7 +62,7 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActi
       {/* Right Column */}
       <div className="lg:col-span-2 space-y-6">
         
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onQuickAdd('addTransaction')}>
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-xl">
@@ -71,17 +71,6 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActi
               <div>
                 <p className="font-semibold">Budget</p>
                 <p className="text-sm text-muted-foreground">Créditer un compte</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onQuickAdd('addTodo')}>
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
-                <ListTodo className="text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="font-semibold">Tâche</p>
-                <p className="text-sm text-muted-foreground">Assigner une action</p>
               </div>
             </CardContent>
           </Card>
