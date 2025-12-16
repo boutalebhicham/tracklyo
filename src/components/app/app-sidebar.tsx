@@ -16,7 +16,6 @@ import type { User } from '@/lib/definitions'
 import { LayoutGrid, Activity, Calendar, Folder, Landmark, LogOut } from 'lucide-react'
 import Logo from './logo'
 import CollaboratorSwitcher from './collaborator-switcher'
-import { Separator } from '../ui/separator'
 
 type AppSidebarProps = {
   loggedInUser: User
@@ -61,33 +60,32 @@ const AppSidebar = ({
       </SidebarHeader>
       
       <SidebarContent className="flex flex-col justify-between p-4">
-        <SidebarMenu>
-          {menuItems.map((item) => (
-            <SidebarMenuItem key={item.id}>
-              <SidebarMenuButton
-                onClick={() => handleViewChange(item.id)}
-                isActive={activeView === item.id}
-                className="w-full justify-start text-base font-normal h-12"
-              >
-                <item.icon size={20} />
-                <span>{item.label}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+        <div className="flex-grow">
+          <SidebarMenu>
+            {menuItems.map((item) => (
+              <SidebarMenuItem key={item.id}>
+                <SidebarMenuButton
+                  onClick={() => handleViewChange(item.id)}
+                  isActive={activeView === item.id}
+                  className="w-full justify-start text-base font-normal h-12"
+                >
+                  <item.icon size={20} />
+                  <span>{item.label}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </div>
 
         <div className="space-y-4">
           {isPatron ? (
-            <>
-              <Separator className="bg-sidebar-border" />
-              <CollaboratorSwitcher 
-                patron={loggedInUser}
-                collaborators={collaborators}
-                onAddCollaborator={onAddCollaborator}
-                activeCollaboratorId={viewedUserId}
-                onCollaboratorChange={setViewedUserId}
-              />
-            </>
+            <CollaboratorSwitcher 
+              patron={loggedInUser}
+              collaborators={collaborators}
+              onAddCollaborator={onAddCollaborator}
+              activeCollaboratorId={viewedUserId}
+              onCollaboratorChange={setViewedUserId}
+            />
           ) : null }
           <SidebarFooter className="p-2 space-y-2">
             <Button onClick={onLogout} variant="ghost" className="w-full justify-start h-12 text-base font-normal rounded-xl hover:bg-black/20">
