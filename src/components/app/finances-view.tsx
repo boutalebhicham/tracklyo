@@ -61,32 +61,34 @@ const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewPr
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold">Finances</h2>
-          <p className="text-muted-foreground">Vue consolidée de votre trésorerie (conversion automatique).</p>
+          <p className="text-muted-foreground">Vue consolidée de votre trésorerie.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-white dark:bg-neutral-800 p-1 rounded-full flex items-center">
-            {(['EUR', 'USD', 'XOF'] as Currency[]).map(c => (
-              <Button 
-                key={c}
-                variant={currentCurrency === c ? 'default' : 'ghost'} 
-                onClick={() => handleCurrencyChange(c)}
-                className="rounded-full px-4 h-8"
-              >
-                {c}
-              </Button>
-            ))}
-          </div>
-           <Button onClick={onAddTransaction} className="rounded-full gap-2 px-4 h-10 bg-primary/20 text-primary hover:bg-primary/30">
-            <Plus size={16} />
-            <span>Budget</span>
-          </Button>
-          <Button onClick={onAddTransaction} variant="destructive" className="rounded-full gap-2 px-4 h-10">
-            <Plus size={16} />
-            <span>Dépense</span>
-          </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="bg-white dark:bg-neutral-800 p-1 rounded-full flex items-center justify-center">
+                {(['EUR', 'USD', 'XOF'] as Currency[]).map(c => (
+                <Button 
+                    key={c}
+                    variant={currentCurrency === c ? 'default' : 'ghost'} 
+                    onClick={() => handleCurrencyChange(c)}
+                    className="rounded-full px-4 h-8 text-xs sm:text-sm"
+                >
+                    {c}
+                </Button>
+                ))}
+            </div>
+            <div className="flex items-center gap-2">
+                <Button onClick={onAddTransaction} className="flex-1 rounded-xl gap-2 h-10 bg-primary/20 text-primary hover:bg-primary/30">
+                    <Plus size={16} />
+                    <span>Budget</span>
+                </Button>
+                <Button onClick={onAddTransaction} variant="destructive" className="flex-1 rounded-xl gap-2 h-10">
+                    <Plus size={16} />
+                    <span>Dépense</span>
+                </Button>
+            </div>
         </div>
       </div>
 
