@@ -64,7 +64,11 @@ export default function Home() {
 
   const handleLogout = () => {
     if (auth) {
-      signOut(auth);
+      // Redirect first, then sign out. This prevents data fetching with a null user.
+      router.push('/login');
+      setTimeout(() => {
+        signOut(auth);
+      }, 300); // Small delay to allow redirection to start
     }
   };
 
@@ -222,7 +226,7 @@ export default function Home() {
           <FinancesView 
             transactions={transactions || []} 
             onAddTransaction={() => setModal('addTransaction')}
-            viewAs={loggedInUserData.role} // The logged-in user's role determines if they can add budget
+            viewAs={loggedInUserData.role}
           />
         );
       case 'activite':
