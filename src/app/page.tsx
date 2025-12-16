@@ -52,18 +52,18 @@ export default function Home() {
 
   // Data for the logged-in user (manager)
   const loggedInUserDocRef = useMemoFirebase(() => authUser?.uid ? doc(firestore, 'users', authUser.uid) : null, [authUser, firestore]);
-  const { data: loggedInUserData, isLoading: isPatronDataLoading } = useDoc<User>(loggedInUserDocRef);
+  const { data: loggedInUserData } = useDoc<User>(loggedInUserDocRef);
 
   // Data for the currently viewed user (can be manager or collaborator)
   const viewedUserDocRef = useMemoFirebase(() => viewedUserId ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore]);
-  const { data: viewedUserData, isLoading: isViewedDataLoading } = useDoc<User>(viewedUserDocRef);
+  const { data: viewedUserData } = useDoc<User>(viewedUserDocRef);
 
   // Get collaborators only if the logged-in user is a PATRON
   const collaboratorsQuery = useMemoFirebase(() => {
     if (!authUser?.uid || !loggedInUserData || loggedInUserData.role !== 'PATRON') return null;
     return query(collection(firestore, 'users'), where('managerId', '==', authUser.uid));
   }, [firestore, authUser, loggedInUserData]);
-  const { data: collaborators, isLoading: areCollaboratorsLoading } = useCollection<User>(collaboratorsQuery);
+  const { data: collaborators } = useCollection<User>(collaboratorsQuery);
 
   const handleLogout = () => {
     signOut(auth);
