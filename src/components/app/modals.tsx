@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm } from '@/lib/definitions';
+import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm, Todo } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Image as ImageIcon, Video, Mic, Upload, Camera } from 'lucide-react';
@@ -320,3 +320,37 @@ export const AddDocumentModal = ({ isOpen, onClose, onAddDocument, authorId }: M
     )
 };
     
+export const AddTodoModal = ({ isOpen, onClose, onAddTodo }: ModalProps & { onAddTodo: (task: string) => void }) => {
+    const [task, setTask] = useState('');
+
+    const handleSubmit = () => {
+        if (task.trim()) {
+            onAddTodo(task);
+            setTask('');
+            onClose();
+        }
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <GlassDialogContent>
+                <DialogHeader>
+                    <DialogTitle>Nouvelle tâche</DialogTitle>
+                </DialogHeader>
+                <div className="py-4 space-y-2">
+                    <Label htmlFor="task">Tâche</Label>
+                    <Input 
+                        id="task" 
+                        value={task} 
+                        onChange={(e) => setTask(e.target.value)} 
+                        className="rounded-xl"
+                        placeholder="Que faut-il faire ?"
+                    />
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleSubmit} className="rounded-xl">Ajouter</Button>
+                </DialogFooter>
+            </GlassDialogContent>
+        </Dialog>
+    );
+};

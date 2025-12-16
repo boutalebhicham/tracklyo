@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user within the Tracklyo application, storing core profile information.",
+      "description": "Represents a user within the Tracklyo application. A 'PATRON' is a manager, and a 'RESPONSABLE' is a collaborator.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the user entity." },
         "name": { "type": "string", "description": "The user's full name." },
@@ -90,6 +90,21 @@
         "size": { "type": "string", "description": "Size of the document." }
       },
       "required": ["id", "name", "type", "date", "authorId", "size"]
+    },
+    "Todo": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Todo",
+      "type": "object",
+      "description": "Represents a to-do item for a user.",
+      "properties": {
+        "id": { "type": "string" },
+        "task": { "type": "string", "description": "The content of the to-do item." },
+        "status": { "type": "string", "enum": ["pending", "completed"], "description": "The status of the to-do item." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "authorId": { "type": "string", "description": "Reference to User who this task is for." },
+        "createdBy": { "type": "string", "description": "Reference to User who created the task." }
+      },
+      "required": ["id", "task", "status", "createdAt", "authorId", "createdBy"]
     }
   },
   "auth": {
@@ -145,6 +160,14 @@
           "entityName": "Document",
           "schema": { "$ref": "#/backend/entities/Document" },
           "description": "Stores documents for a specific user."
+        }
+      },
+      {
+        "path": "/users/{userId}/todos/{todoId}",
+        "definition": {
+          "entityName": "Todo",
+          "schema": { "$ref": "#/backend/entities/Todo" },
+          "description": "Stores to-do items for a specific user."
         }
       }
     ]

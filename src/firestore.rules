@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -7,24 +8,19 @@ service cloud.firestore {
     }
 
     function isManagerOf(collaboratorId) {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(collaboratorId)).data.managerId == request.auth.uid;
-    }
-
-    function isPatron() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON';
+      let userDoc = get(/databases/$(database)/documents/users/$(collaboratorId));
+      return request.auth != null && userDoc.data.managerId == request.auth.uid;
     }
 
     match /users/{userId} {
-      // Un utilisateur peut lire et écrire son propre profil.
-      // Un manager (PATRON) peut lire le profil de ses collaborateurs.
-      allow read: if isOwner(userId) || isManagerOf(userId);
-      allow write: if isOwner(userId);
+      // A user can read/write their own profile.
+      // A manager (PATRON) can read the profile of their collaborators.
+      allow read, write: if isOwner(userId) || isManagerOf(userId);
 
-      // Un utilisateur peut lire/écrire dans ses propres sous-collections.
-      // Un manager (PATRON) peut également lire les sous-collections de ses collaborateurs.
+      // A user can read/write their own subcollections.
+      // A manager (PATRON) can also read/write the subcollections of their collaborators.
       match /{subcollection}/{docId} {
-        allow read: if isOwner(userId) || isManagerOf(userId);
-        allow write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isManagerOf(userId);
       }
     }
   }
