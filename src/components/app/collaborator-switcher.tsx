@@ -40,10 +40,10 @@ const CollaboratorSwitcher: React.FC<CollaboratorSwitcherProps> = ({
      <Button variant="ghost" className="w-full h-auto justify-between items-center p-2 rounded-xl text-left hover:bg-black/20">
         <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
-                <AvatarImage src={activeUser.avatar} alt={activeUser.name} />
-                <AvatarFallback>{activeUser.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarImage src={activeUser!.avatar} alt={activeUser!.name} />
+                <AvatarFallback>{activeUser!.name.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium flex-1 truncate text-white">{activeUser.name}</span>
+            <span className="text-sm font-medium flex-1 truncate text-white">{activeUser!.name}</span>
         </div>
         <ChevronsUpDown className="h-4 w-4 text-sidebar-foreground/60" />
     </Button>
@@ -52,12 +52,12 @@ const CollaboratorSwitcher: React.FC<CollaboratorSwitcherProps> = ({
   const mobileTrigger = (
       <Button variant="ghost" className="h-auto p-1.5 rounded-full flex items-center gap-2 bg-slate-100 dark:bg-slate-800">
         <Avatar className="h-8 w-8">
-            <AvatarImage src={activeUser.avatar} alt={activeUser.name} />
-            <AvatarFallback>{activeUser.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={activeUser!.avatar} alt={activeUser!.name} />
+            <AvatarFallback>{activeUser!.name.substring(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="text-left">
             <p className="text-xs text-muted-foreground">SUIVI DE</p>
-            <p className="font-bold text-sm leading-tight">{activeUser.name.split(' ')[0]}</p>
+            <p className="font-bold text-sm leading-tight">{activeUser!.name.split(' ')[0]}</p>
         </div>
         <ChevronsUpDown className="h-4 w-4 text-muted-foreground ml-1" />
       </Button>
