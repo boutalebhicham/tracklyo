@@ -21,10 +21,10 @@ service cloud.firestore {
                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON';
 
 
-      // Generic rule for all user subcollections
+      // Generic rule for all user subcollections EXCEPT 'todos'
       match /{subcollection}/{docId} {
         // READ (get, list) rule for all subcollections
-        allow list, get: if request.auth != null && (
+        allow read: if request.auth != null && (
           request.auth.uid == userId ||
           (
             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
