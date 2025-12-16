@@ -18,7 +18,7 @@ service cloud.firestore {
 
       // Projects are owned by the user.
       match /projects/{projectId} {
-        allow read, create, update, delete: if isOwner(userId) && request.resource.data.authorId == userId;
+        allow get, list, create, update, delete: if isOwner(userId);
 
         // All project-specific data is nested under the project.
         // Access is granted if the user owns the parent project.
