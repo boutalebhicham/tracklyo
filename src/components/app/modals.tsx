@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile } from '@/lib/definitions';
+import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Image as ImageIcon, Video, Mic, Upload } from 'lucide-react';
@@ -51,18 +51,17 @@ export const PaywallModal = ({ isOpen, onClose }: ModalProps) => (
 );
 
 
-export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAddUser: (user: Omit<User, 'id' | 'email' | 'role' | 'avatar' | 'managerId'>) => void }) => {
+export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAddUser: (user: AddUserForm) => void }) => {
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   
   const handleSubmit = () => {
-    if (name) {
-      onAddUser({
-        name,
-        phoneNumber: phone,
-      });
+    if (name && email && password) {
+      onAddUser({ name, email, password });
       setName('');
-      setPhone('');
+      setEmail('');
+      setPassword('');
       onClose();
     }
   };
@@ -73,9 +72,10 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
         <DialogHeader><DialogTitle>Ajouter un collaborateur</DialogTitle></DialogHeader>
         <div className="space-y-4 py-4">
             <div className="space-y-2"><Label htmlFor="name">Nom complet</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} className="rounded-xl" /></div>
-            <div className="space-y-2"><Label htmlFor="phone">Numéro de téléphone (WhatsApp)</Label><Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} className="rounded-xl" /></div>
+            <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} className="rounded-xl" /></div>
+            <div className="space-y-2"><Label htmlFor="password">Mot de passe temporaire</Label><Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} className="rounded-xl" /></div>
         </div>
-        <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Ajouter</Button></DialogFooter>
+        <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Créer le compte</Button></DialogFooter>
       </GlassDialogContent>
     </Dialog>
   );
@@ -86,7 +86,7 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [currency, setCurrency] = useState<Currency>('EUR');
-  const [transactionType, setTransactionType] = useState<TransactionType>(viewAs === 'PATRON' ? 'BUDGET_ADD' : 'EXPENSE');
+  const [transactionType, setTransactionType] = useState<TransactionType>('EXPENSE');
   const [error, setError] = useState('');
 
   const handleSubmit = () => {

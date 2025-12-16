@@ -14,6 +14,11 @@ export interface User {
   managerId?: string; // ID of the PATRON
 }
 
+export type AddUserForm = Omit<User, 'id' | 'role' | 'avatar' | 'managerId' | 'phoneNumber'> & {
+  password?: string;
+};
+
+
 export interface Transaction {
   id: string;
   authorId: string;

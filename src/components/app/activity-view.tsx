@@ -29,6 +29,9 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, author
   const getUser = (id: string) => users.find(u => u.id === id)
   const firestore = useFirestore();
 
+  // The current logged-in user can only add recaps if they are viewing their own profile.
+  const canAddRecap = currentUser.id === authorId;
+
   const handleAddComment = (recapId: string, content: string) => {
     if (!content.trim()) return;
     const ref = collection(firestore, 'users', authorId, 'recaps', recapId, 'comments');
@@ -54,22 +57,24 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, author
       
       <div className="max-w-3xl mx-auto space-y-6">
         
-        <Card className="rounded-4xl shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarImage src={currentUser?.avatar} />
-                <AvatarFallback>{currentUser?.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <button onClick={onAddRecap} className="flex-1 text-left bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors px-4 py-3 rounded-full">
-                <span className="text-muted-foreground">Publier un nouveau rapport...</span>
-              </button>
-              <Button onClick={onAddRecap} variant="ghost" size="icon" className="rounded-full">
-                <Camera size={20} />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {canAddRecap && (
+          <Card className="rounded-4xl shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback>{currentUser?.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <button onClick={onAddRecap} className="flex-1 text-left bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors px-4 py-3 rounded-full">
+                  <span className="text-muted-foreground">Publier un nouveau rapport...</span>
+                </button>
+                <Button onClick={onAddRecap} variant="ghost" size="icon" className="rounded-full">
+                  <Camera size={20} />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {sortedRecaps.length === 0 ? (
           <div className="text-center py-16 px-6 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-4xl">
