@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm, Todo } from '@/lib/definitions';
+import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Image as ImageIcon, Video, Mic, Upload, Camera } from 'lucide-react';
@@ -319,35 +319,4 @@ export const AddDocumentModal = ({ isOpen, onClose, onAddDocument, authorId }: M
         </Dialog>
     )
 };
-
-export const AddTodoModal = ({ isOpen, onClose, onAddTodo }: ModalProps & { onAddTodo: (todo: Omit<Todo, 'id' | 'assignedTo' | 'createdBy' | 'createdAt' | 'status' | 'completedAt'>) => void }) => {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [deadline, setDeadline] = useState('');
-
-    const handleSubmit = () => {
-        if(title && deadline) {
-            onAddTodo({ title, description, deadline: new Date(deadline).toISOString() });
-            setTitle('');
-            setDescription('');
-            setDeadline('');
-            onClose();
-        }
-    }
-    
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <GlassDialogContent>
-                <DialogHeader><DialogTitle>Nouvelle tâche</DialogTitle></DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2"><Label htmlFor="todo-title">Titre de la tâche</Label><Input id="todo-title" value={title} onChange={e => setTitle(e.target.value)} className="rounded-xl" /></div>
-                    <div className="space-y-2"><Label htmlFor="todo-deadline">Deadline</Label><Input id="todo-deadline" type="datetime-local" value={deadline} onChange={e => setDeadline(e.target.value)} className="rounded-xl"/></div>
-                    <div className="space-y-2"><Label htmlFor="todo-desc">Description (optionnel)</Label><Textarea id="todo-desc" value={description} onChange={e => setDescription(e.target.value)} className="rounded-xl"/></div>
-                </div>
-                <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Assigner la tâche</Button></DialogFooter>
-            </GlassDialogContent>
-        </Dialog>
-    )
-}
-
     
