@@ -90,6 +90,23 @@
         "size": { "type": "string", "description": "Size of the document." }
       },
       "required": ["id", "name", "type", "date", "authorId", "size"]
+    },
+    "Todo": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Todo",
+      "type": "object",
+      "description": "Represents a to-do item assigned to a user.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the to-do item." },
+        "title": { "type": "string", "description": "The title or content of the task." },
+        "deadline": { "type": "string", "format": "date-time", "description": "The deadline for the task." },
+        "status": { "type": "string", "enum": ["PENDING", "DONE"], "description": "The current status of the task." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "The creation date of the task." },
+        "completedAt": { "type": ["string", "null"], "format": "date-time", "description": "The completion date of the task." },
+        "createdBy": { "type": "string", "description": "The ID of the user (manager) who created the task." },
+        "assignedTo": { "type": "string", "description": "The ID of the user to whom the task is assigned." }
+      },
+      "required": ["id", "title", "status", "createdAt", "createdBy", "assignedTo"]
     }
   },
   "auth": {
@@ -146,7 +163,17 @@
           "schema": { "$ref": "#/backend/entities/Document" },
           "description": "Stores documents for a specific user."
         }
+      },
+      {
+        "path": "/users/{userId}/todos/{todoId}",
+        "definition": {
+          "entityName": "Todo",
+          "schema": { "$ref": "#/backend/entities/Todo" },
+          "description": "Stores to-do items for a specific user."
+        }
       }
     ]
   }
 }
+
+    

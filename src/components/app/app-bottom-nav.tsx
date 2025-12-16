@@ -34,3 +34,5 @@ const AppBottomNav = ({ activeView, setActiveView }: AppBottomNavProps) => {
 }
 
 export default AppBottomNav
+
+    

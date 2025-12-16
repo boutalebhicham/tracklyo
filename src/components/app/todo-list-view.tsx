@@ -22,7 +22,7 @@ type TodoListViewProps = {
 
 const TodoListView = ({ todos, currentUser, viewedUser, onAddTodo, onUpdateTodoStatus }: TodoListViewProps) => {
 
-  const canManageTodos = currentUser.role === 'PATRON' && currentUser.id !== viewedUser.id;
+  const canManageTodos = currentUser.role === 'PATRON';
   const isOwnTodos = currentUser.id === viewedUser.id;
 
   const sortedTodos = [...todos].sort((a, b) => {
@@ -35,9 +35,13 @@ const TodoListView = ({ todos, currentUser, viewedUser, onAddTodo, onUpdateTodoS
   const getDeadlineInfo = (deadline: string) => {
     const deadLineDate = parseISO(deadline);
     if (isPast(deadLineDate) && !isToday(deadLineDate)) {
-      return { text: `En retard de ${differenceInDays(new Date(), deadLineDate)} jours`, color: "text-red-500", icon: <AlertCircle size={14} /> };
+      const daysOverdue = differenceInDays(new Date(), deadLineDate);
+      return { text: `En retard de ${daysOverdue} jour(s)`, color: "text-red-500", icon: <AlertCircle size={14} /> };
     }
     const diff = differenceInDays(deadLineDate, new Date());
+     if (diff < 0) { // If it's today but in the past
+      return { text: `Aujourd'hui`, color: "text-amber-500", icon: <Calendar size={14} /> };
+    }
     if (diff <= 3) {
       return { text: `Dans ${diff + 1} jours`, color: "text-amber-500", icon: <Calendar size={14} /> };
     }
@@ -82,7 +86,7 @@ const TodoListView = ({ todos, currentUser, viewedUser, onAddTodo, onUpdateTodoS
                              className="mt-1 h-5 w-5 rounded"
                            />
                            <div className="flex-1">
-                             <label htmlFor={`todo-${todo.id}`} className={cn("font-medium leading-tight", isDone && "line-through text-muted-foreground")}>{todo.title}</label>
+                             <label htmlFor={`todo-${todo.id}`} className={cn("font-medium leading-tight cursor-pointer", isDone && "line-through text-muted-foreground")}>{todo.title}</label>
                              {todo.description && <p className={cn("text-sm text-muted-foreground", isDone && "line-through")}>{todo.description}</p>}
                            </div>
                            {!isDone && (
@@ -108,3 +112,5 @@ const TodoListView = ({ todos, currentUser, viewedUser, onAddTodo, onUpdateTodoS
 }
 
 export default TodoListView
+
+    
