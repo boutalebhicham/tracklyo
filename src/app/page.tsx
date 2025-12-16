@@ -197,7 +197,7 @@ export default function Home() {
   }
 
   const renderContent = () => {
-    if (!viewedUserData || !loggedInUserData) {
+    if (!loggedInUserData) {
         return (
              <div className="flex flex-col items-center justify-center pt-20 text-center">
                 <p>Chargement des données...</p>
@@ -205,11 +205,14 @@ export default function Home() {
         )
     }
 
+    // viewedUserData might still be loading, components should handle this.
+    const userToDisplay = viewedUserData || loggedInUserData;
+
     switch(activeView) {
       case 'accueil':
         return (
           <DashboardView
-            user={viewedUserData!}
+            user={userToDisplay}
             transactions={transactions || []}
             recaps={recaps || []}
             events={events || []}
@@ -251,7 +254,7 @@ export default function Home() {
           />
         );
       default:
-        return <DashboardView user={viewedUserData!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
+        return <DashboardView user={userToDisplay} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
     }
   }
 
@@ -282,7 +285,7 @@ export default function Home() {
             />
           )}
           <div className="p-4 sm:p-6 lg:p-8">
-            {!isMobile && <AppHeader user={viewedUserData} />}
+            {!isMobile && <AppHeader user={viewedUserData || loggedInUserData} />}
             <div className="mt-6">
               {renderContent()}
             </div>
