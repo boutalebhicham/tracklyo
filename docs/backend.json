@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -9,7 +10,7 @@
         "id": { "type": "string", "description": "Unique identifier for the user entity." },
         "name": { "type": "string", "description": "The user's full name." },
         "email": { "type": "string", "description": "The user's email address.", "format": "email" },
-        "role": { "type": "string", "description": "The user's role within the application (PATRON or RESPONSABLE)." },
+        "role": { "type": "string", "enum": ["PATRON", "RESPONSABLE"], "description": "The user's role within the application." },
         "avatar": { "type": "string", "description": "URL of the user's profile picture." },
         "phoneNumber": { "type": "string", "description": "The user's phone number for WhatsApp integration." },
         "managerId": { "type": "string", "description": "The ID of the manager (PATRON) for this user, if applicable." }
@@ -26,8 +27,8 @@
         "amount": { "type": "number", "description": "Amount of the transaction." },
         "reason": { "type": "string", "description": "Reason for the transaction." },
         "date": { "type": "string", "description": "Date of the transaction.", "format": "date-time" },
-        "type": { "type": "string", "description": "Type of transaction (BUDGET_ADD or EXPENSE)." },
-        "currency": { "type": "string", "description": "Currency of the transaction (EUR, USD, XOF)." },
+        "type": { "type": "string", "enum": ["BUDGET_ADD", "EXPENSE"], "description": "Type of transaction." },
+        "currency": { "type": "string", "enum": ["EUR", "USD", "XOF"], "description": "Currency of the transaction." },
         "authorId": { "type": "string", "description": "Reference to User." }
       },
       "required": ["id", "amount", "reason", "date", "type", "currency", "authorId"]
@@ -40,7 +41,7 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the recap entity." },
         "title": { "type": "string", "description": "Title of the activity recap." },
-        "type": { "type": "string", "description": "Type of recap (DAILY or WEEKLY)." },
+        "type": { "type": "string", "enum": ["DAILY", "WEEKLY"], "description": "Type of recap." },
         "description": { "type": "string", "description": "Detailed description of the activity recap." },
         "date": { "type": "string", "description": "Date of the activity recap.", "format": "date-time" },
         "authorId": { "type": "string", "description": "Reference to User." }
@@ -93,8 +94,7 @@
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {

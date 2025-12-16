@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react'
@@ -24,7 +25,9 @@ const AppHeader = ({ user }: AppHeaderProps) => {
           {getGreeting()}
           {user ? <>, <span className="text-primary">{user.name.split(' ')[0]}</span>.</> : '.'}
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Voici ce qui se passe aujourd'hui.</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {user ? `Voici un aperçu de l'activité de ${user.name.split(' ')[0]}.` : "Voici ce qui se passe aujourd'hui."}
+        </p>
       </div>
       <div className="hidden sm:flex items-center gap-2 bg-card p-2 rounded-full">
         <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />

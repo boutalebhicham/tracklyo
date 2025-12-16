@@ -1,12 +1,14 @@
+
 export type Currency = 'EUR' | 'USD' | 'XOF';
 export type TransactionType = 'BUDGET_ADD' | 'EXPENSE';
 export type RecapType = 'DAILY' | 'WEEKLY';
+export type UserRole = 'PATRON' | 'RESPONSABLE';
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: string; // Changed from UserRole to string
+  role: UserRole;
   avatar: string;
   phoneNumber: string;
   managerId?: string; // ID of the PATRON

@@ -1,3 +1,4 @@
+
 'use client';
     
 import {
@@ -39,6 +40,7 @@ export function setDocumentNonBlocking(docRef: DocumentReference, data: any, opt
 export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
   const promise = addDoc(colRef, data)
     .catch(error => {
+      console.error("Error in addDocumentNonBlocking", error);
       errorEmitter.emit(
         'permission-error',
         new FirestorePermissionError({

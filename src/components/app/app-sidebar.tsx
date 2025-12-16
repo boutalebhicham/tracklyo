@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react'
@@ -32,7 +33,7 @@ const menuItems = [
   { id: 'activite', label: 'Activité', icon: Activity },
   { id: 'agenda', label: 'Agenda', icon: Calendar },
   { id: 'fichiers', label: 'Fichiers', icon: Folder },
-  { id: 'budget', label: 'Budget', icon: Landmark },
+  { id: 'finances', label: 'Finances', icon: Landmark },
 ];
 
 const AppSidebar = ({
@@ -47,11 +48,7 @@ const AppSidebar = ({
 }: AppSidebarProps) => {
 
   const handleViewChange = (viewId: string) => {
-    if (viewId === 'budget') {
-      setActiveView('finances');
-    } else {
-      setActiveView(viewId);
-    }
+    setActiveView(viewId);
   };
   
   const isPatron = loggedInUser.role === 'PATRON';
@@ -65,7 +62,7 @@ const AppSidebar = ({
       <SidebarContent className="flex flex-col justify-between p-4">
         <div className="space-y-4">
           
-          {isPatron && (
+          {isPatron ? (
             <CollaboratorSwitcher 
               patron={loggedInUser}
               collaborators={collaborators}
@@ -73,6 +70,10 @@ const AppSidebar = ({
               activeCollaboratorId={viewedUserId}
               onCollaboratorChange={setViewedUserId}
             />
+          ) : (
+             <div className="px-3 py-2">
+                <h3 className="text-sm font-semibold text-sidebar-foreground/60">MON ESPACE</h3>
+             </div>
           )}
           
           <SidebarMenu>
@@ -80,7 +81,7 @@ const AppSidebar = ({
               <SidebarMenuItem key={item.id}>
                 <SidebarMenuButton
                   onClick={() => handleViewChange(item.id)}
-                  isActive={activeView === item.id || (activeView === 'finances' && item.id === 'budget')}
+                  isActive={activeView === item.id}
                   className="w-full justify-start text-base font-normal h-12"
                 >
                   <item.icon size={20} />

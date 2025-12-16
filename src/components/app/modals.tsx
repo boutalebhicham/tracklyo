@@ -51,7 +51,7 @@ export const PaywallModal = ({ isOpen, onClose }: ModalProps) => (
 );
 
 
-export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAddUser: (user: Omit<User, 'id' | 'email'>) => void }) => {
+export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAddUser: (user: Omit<User, 'id' | 'email' | 'role' | 'avatar' | 'managerId'>) => void }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   
@@ -60,8 +60,6 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
       onAddUser({
         name,
         phoneNumber: phone,
-        role: "RESPONSABLE",
-        avatar: `https://picsum.photos/seed/${Date.now()}/100/100`,
       });
       setName('');
       setPhone('');

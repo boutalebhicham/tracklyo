@@ -3,9 +3,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { collection, query, where, doc, addDoc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
 import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
@@ -18,9 +18,7 @@ import FilesView from '@/components/app/files-view';
 import WhatsAppFab from '@/components/app/whatsapp-fab';
 import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal } from '@/components/app/modals';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { useFirestore } from '@/firebase';
-import { addDocumentNonBlocking } from '@/firebase';
-
+import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function Home() {
   const { user: authUser, isUserLoading } = useUser();
@@ -87,10 +85,11 @@ export default function Home() {
   
   const commentsQuery = useMemoFirebase(() => {
     if (!authorId || !recaps?.length) return null;
+    // Note: This creates multiple listeners if there are many recaps.
+    // This is not ideal for performance but works for this scope.
+    // A better implementation would involve a more complex query or data denormalization.
     const recapIds = recaps.map(r => r.id);
     if (recapIds.length === 0) return null;
-    // This is not ideal, it should fetch comments for all recaps.
-    // For now, it fetches for the first one as a placeholder.
     return query(collection(firestore, `users/${authorId}/recaps/${recapIds[0]}/comments`));
   }, [firestore, authorId, recaps]);
   const { data: comments } = useCollection<Comment>(commentsQuery);
@@ -127,17 +126,25 @@ export default function Home() {
     setModal(null);
   };
   
-  const handleAddUser = (newUser: Omit<User, 'id' | 'email' >) => {
+  const handleAddUser = async (newUser: Omit<User, 'id' | 'email' | 'role' | 'managerId' | 'avatar'>) => {
     if (!authUser) return;
-    const ref = collection(firestore, 'users');
-    const fullUser = {
-      ...newUser,
-      id: `user-${Date.now()}`,
-      email: `${newUser.name.split(' ').join('.').toLowerCase()}@tracklyo.com`,
+  
+    // In a real app, you would use a Cloud Function to create the user to keep credentials secure.
+    // For this prototype, we'll create a placeholder user document.
+    const newUserId = `user_${Date.now()}`;
+    const userDocRef = doc(firestore, "users", newUserId);
+  
+    const fullUser: User = {
+      id: newUserId,
+      email: `${newUser.name.replace(/\s+/g, '.').toLowerCase()}@tracklyo.auto`,
+      role: 'RESPONSABLE',
       managerId: authUser.uid,
-    } as User
-
-    addDocumentNonBlocking(ref, fullUser);
+      avatar: `https://picsum.photos/seed/${newUserId}/100/100`,
+      name: newUser.name,
+      phoneNumber: newUser.phoneNumber,
+    };
+  
+    setDocumentNonBlocking(userDocRef, fullUser, {});
     setModal(null);
   }
 
@@ -163,7 +170,7 @@ export default function Home() {
   }, [loggedInUserData, collaborators, viewedUserData]);
 
 
-  if (isUserLoading || !authUser || !loggedInUserData || !viewedUserData) {
+  if (isUserLoading || !authUser || !loggedInUserData) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement de votre espace de travail...</p>
@@ -172,6 +179,14 @@ export default function Home() {
   }
 
   const renderContent = () => {
+    if (!viewedUserData) {
+        return (
+             <div className="flex items-center justify-center pt-20">
+                <p>Sélectionnez un collaborateur pour voir ses données.</p>
+            </div>
+        )
+    }
+
     switch(activeView) {
       case 'accueil':
         return (

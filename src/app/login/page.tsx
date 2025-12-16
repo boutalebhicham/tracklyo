@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -24,7 +25,6 @@ const loginSchema = z.object({
 
 const registerSchema = z.object({
   name: z.string().min(1, { message: 'Le nom est requis' }),
-  role: z.enum(['PATRON', 'RESPONSABLE'], { required_error: 'Veuillez sélectionner un type de compte.' }),
   email: z.string().email({ message: 'Adresse email invalide' }),
   password: z.string().min(6, { message: 'Le mot de passe doit contenir au moins 6 caractères' }),
 });
@@ -71,11 +71,12 @@ export default function LoginPage() {
       const user = userCredential.user;
       
       const userDocRef = doc(firestore, 'users', user.uid);
+      // For now, new users are always PATRONs. RESPONSABLEs are created by PATRONs.
       setDocumentNonBlocking(userDocRef, {
         id: user.uid,
         name: data.name,
         email: data.email,
-        role: data.role,
+        role: 'PATRON', 
         avatar: `https://picsum.photos/seed/${user.uid}/100/100`,
         phoneNumber: '',
       }, { merge: true });
@@ -138,33 +139,13 @@ export default function LoginPage() {
                 exit="exit"
                 transition={{ duration: 0.3 }}
               >
-                <h2 className="text-2xl font-bold text-center">Créer un compte</h2>
+                <h2 className="text-2xl font-bold text-center">Créer un compte de gestion</h2>
+                 <p className="text-center text-sm text-slate-300 mt-2">Vous pourrez ajouter vos collaborateurs ensuite.</p>
                 <form onSubmit={registerForm.handleSubmit(handleRegister)} className="grid gap-4 mt-6">
                   <div className="grid gap-2">
                     <Label htmlFor="register-name">Nom complet</Label>
                     <Input id="register-name" {...registerForm.register('name')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
                     {registerForm.formState.errors.name && <p className="text-red-400 text-sm">{registerForm.formState.errors.name.message}</p>}
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Type de compte</Label>
-                    <RadioGroup
-                      onValueChange={(value) => registerForm.setValue('role', value as 'PATRON' | 'RESPONSABLE')}
-                      className="grid grid-cols-2 gap-4 mt-2"
-                    >
-                      <div>
-                        <RadioGroupItem value="PATRON" id="patron" className="peer sr-only" />
-                        <Label htmlFor="patron" className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent/50 peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                          Compte de gestion
-                        </Label>
-                      </div>
-                      <div>
-                        <RadioGroupItem value="RESPONSABLE" id="responsable" className="peer sr-only" />
-                        <Label htmlFor="responsable" className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent/50 peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                          Compte collaborateur
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                    {registerForm.formState.errors.role && <p className="text-red-400 text-sm">{registerForm.formState.errors.role.message}</p>}
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="register-email">Email</Label>
