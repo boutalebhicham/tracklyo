@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React from 'react'
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 import type { User } from '@/lib/definitions'
-import { LayoutGrid, Activity, Calendar, Folder, Landmark, LogOut } from 'lucide-react'
+import { LayoutGrid, Activity, Calendar, Folder, Landmark, LogOut, ListTodo } from 'lucide-react'
 import Logo from './logo'
 import CollaboratorSwitcher from './collaborator-switcher'
 
@@ -31,6 +32,7 @@ type AppSidebarProps = {
 export const menuItems = [
   { id: 'accueil', label: 'Accueil', icon: LayoutGrid },
   { id: 'activite', label: 'Activité', icon: Activity },
+  { id: 'todo', label: 'To-Do List', icon: ListTodo },
   { id: 'agenda', label: 'Agenda', icon: Calendar },
   { id: 'fichiers', label: 'Fichiers', icon: Folder },
   { id: 'finances', label: 'Finances', icon: Landmark },

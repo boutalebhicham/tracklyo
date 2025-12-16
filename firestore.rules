@@ -23,11 +23,8 @@ service cloud.firestore {
 
       // Generic rule for all user subcollections
       match /{subcollection}/{docId} {
-
         // READ (get, list) rule for all subcollections
-        // A user can read their own subcollection data.
-        // A PATRON can read the subcollection data of a user they manage.
-        allow read: if request.auth != null && (
+        allow list, get: if request.auth != null && (
           request.auth.uid == userId ||
           (
             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
@@ -37,24 +34,72 @@ service cloud.firestore {
           )
         );
         
-        // WRITE (create, update, delete) rule for most subcollections.
-        // Only the user themselves can write to their subcollections.
-        allow write: if request.auth != null && request.auth.uid == userId;
+        // CREATE: User can create docs in their own subcollections. Patron cannot create for others.
+        allow create: if request.auth != null && request.auth.uid == userId;
+
+        // UPDATE, DELETE: Can only be done by the user themselves.
+        allow update, delete: if request.auth != null && request.auth.uid == userId;
 
         // Specific rules for comments sub-subcollection
         match /comments/{commentId} {
-            // A PATRON can write a comment on a recap of a user they manage.
-            // A user can write a comment on their own recap.
-             allow write: if request.auth != null && (
-               (
-                  exists(/databases/$(database)/documents/users/$(userId)) &&
-                  get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid &&
+             allow create: if request.auth != null && (
+                // The user themself can comment on their own recap
+                request.auth.uid == userId ||
+                // The PATRON manager can comment on their RESPONSABLE's recap
+                (
                   exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                  get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON'
-               ) || 
-                request.auth.uid == userId
+                  get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+                  exists(/databases/$(database)/documents/users/$(userId)) &&
+                  get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid
+                )
              );
+             // Read, update, delete are inherited.
         }
+      }
+      
+      // Specific rules for 'todos' subcollection
+      match /todos/{todoId} {
+          // READ: User can see their own todos, Patron can see their responsable's todos.
+          allow read: if request.auth != null && (
+              request.auth.uid == userId || 
+              (
+                exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+                exists(/databases/$(database)/documents/users/$(userId)) &&
+                get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid
+              )
+          );
+
+          // CREATE: Only a PATRON can create a todo for their RESPONSABLE.
+          allow create: if request.auth != null &&
+              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+              request.resource.data.assigneeId == userId &&
+              request.resource.data.authorId == request.auth.uid;
+              
+
+          // UPDATE:
+          // A RESPONSABLE can only change the 'status' of their own task.
+          allow update: if request.auth != null &&
+              (
+                ( // RESPONSABLE can only update status
+                  request.auth.uid == userId &&
+                  request.resource.data.title == resource.data.title &&
+                  request.resource.data.description == resource.data.description &&
+                  request.resource.data.deadline == resource.data.deadline
+                ) ||
+                ( // PATRON can update anything
+                  exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                  get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+                  get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid
+                )
+              );
+
+          // DELETE: Only the PATRON who created it can delete it.
+          allow delete: if request.auth != null &&
+              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+              resource.data.authorId == request.auth.uid;
       }
     }
   }

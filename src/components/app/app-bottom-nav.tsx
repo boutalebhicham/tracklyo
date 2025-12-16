@@ -1,14 +1,22 @@
 
+
 "use client"
 
 import React from 'react'
 import { menuItems } from './app-sidebar'
 import { cn } from '@/lib/utils'
+import { ListTodo } from 'lucide-react'
 
 type AppBottomNavProps = {
   activeView: string
   setActiveView: (view: string) => void
 }
+
+const mobileMenuItems = menuItems.filter(item => ['accueil', 'activite', 'todo', 'agenda', 'finances'].includes(item.id));
+if (!mobileMenuItems.find(i => i.id === 'todo')) {
+    mobileMenuItems.splice(2, 0, { id: 'todo', label: 'To-Do', icon: ListTodo });
+}
+
 
 const AppBottomNav = ({ activeView, setActiveView }: AppBottomNavProps) => {
   return (
