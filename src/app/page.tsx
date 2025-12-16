@@ -32,18 +32,19 @@ export default function Home() {
   // This is the user whose data is being viewed. It can be the logged-in user or a collaborator.
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
 
+  const loggedInUserDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [authUser, firestore]);
+  const { data: loggedInUserData } = useDoc<User>(loggedInUserDocRef);
+
   useEffect(() => {
     if (!isUserLoading && !authUser) {
       router.push('/login');
     }
-    // When authUser is loaded, set the initial viewed user to be the logged-in user.
-    if (authUser && !viewedUserId) {
-        setViewedUserId(authUser.uid);
+    // When authUser is loaded and loggedInUserData is available, set the initial viewed user.
+    if (loggedInUserData && !viewedUserId) {
+        setViewedUserId(loggedInUserData.id);
     }
-  }, [authUser, isUserLoading, router, viewedUserId]);
+  }, [authUser, isUserLoading, router, loggedInUserData, viewedUserId]);
 
-  const loggedInUserDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [authUser, firestore]);
-  const { data: loggedInUserData } = useDoc<User>(loggedInUserDocRef);
 
   const viewedUserDocRef = useMemoFirebase(() => viewedUserId ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore]);
   const { data: viewedUserData } = useDoc<User>(viewedUserDocRef);
@@ -84,13 +85,10 @@ export default function Home() {
   const { data: documents } = useCollection<DocumentFile>(documentsQuery);
   
   const commentsQuery = useMemoFirebase(() => {
-    if (!authorId || !recaps?.length) return null;
-    // Note: This creates multiple listeners if there are many recaps.
-    // This is not ideal for performance but works for this scope.
-    // A better implementation would involve a more complex query or data denormalization.
-    const recapIds = recaps.map(r => r.id);
-    if (recapIds.length === 0) return null;
-    return query(collection(firestore, `users/${authorId}/recaps/${recapIds[0]}/comments`));
+    if (!authorId || !recaps || recaps.length === 0) return null;
+    // This is a simplification. For a production app, consider querying comments more efficiently.
+    const lastRecapId = recaps[recaps.length - 1].id;
+    return query(collection(firestore, `users/${authorId}/recaps/${lastRecapId}/comments`));
   }, [firestore, authorId, recaps]);
   const { data: comments } = useCollection<Comment>(commentsQuery);
 
@@ -181,8 +179,9 @@ export default function Home() {
   const renderContent = () => {
     if (!viewedUserData) {
         return (
-             <div className="flex items-center justify-center pt-20">
-                <p>Sélectionnez un collaborateur pour voir ses données.</p>
+             <div className="flex flex-col items-center justify-center pt-20 text-center">
+                <h3 className="text-lg font-semibold">Sélectionnez un collaborateur</h3>
+                <p className="text-muted-foreground">Utilisez le menu en bas à gauche pour choisir un profil à consulter.</p>
             </div>
         )
     }
@@ -293,3 +292,5 @@ export default function Home() {
     </SidebarProvider>
   );
 }
+
+    
