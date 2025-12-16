@@ -76,7 +76,7 @@ export default function Home() {
     }
   };
 
-  const authorId = viewedUserId;
+  const authorId = authUser ? viewedUserId : null;
 
   const transactionsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'transactions')) : null, [firestore, authorId]);
   const { data: transactions } = useCollection<Transaction>(transactionsQuery);
