@@ -1,53 +1,19 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
+    // Document utilisateur
     match /users/{userId} {
-      // Les utilisateurs peuvent lire/écrire leur propre profil
-      allow read, write: if isOwner(userId);
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
 
-      // Les utilisateurs peuvent lire et écrire dans leurs propres sous-collections
+      // L'utilisateur ne peut lire/écrire QUE son propre document
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+
+      // Sous-collection projects
       match /projects/{projectId} {
-        allow read, write: if isOwner(userId);
-
-        // Les données spécifiques au projet sont imbriquées ici.
-        // L'accès est accordé si l'utilisateur est propriétaire du projet parent.
-        match /recaps/{recapId} {
-          allow read, write: if isOwner(userId);
-          
-          match /comments/{commentId} {
-            allow read, write: if isOwner(userId);
-          }
-        }
-        
-        match /events/{eventId} {
-          allow read, write: if isOwner(userId);
-        }
-        
-        match /documents/{documentId} {
-          allow read, write: if isOwner(userId);
-        }
-        
-        match /transactions/{transactionId} {
-          allow read, write: if isOwner(userId);
-        }
+        allow read, write: if request.auth != null
+                           && request.auth.uid == userId;
       }
-    }
-    
-    // Cette règle permet à tout utilisateur connecté de lister tous les utilisateurs.
-    // C'est utile pour des fonctionnalités comme la sélection de collaborateurs.
-    match /users/{userId} {
-        allow list: if isSignedIn();
     }
   }
 }
