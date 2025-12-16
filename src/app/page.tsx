@@ -44,11 +44,11 @@ export default function Home() {
     if (!isUserLoading && !authUser) {
       router.push('/login');
     }
-    // Set the viewed user to the logged-in user initially
-    if (authUser && loggedInUserData && !viewedUserId) {
+    // Set the viewed user to the logged-in user initially, as soon as auth is resolved.
+    if (authUser && !viewedUserId) {
         setViewedUserId(authUser.uid);
     }
-  }, [authUser, isUserLoading, router, loggedInUserData]);
+  }, [authUser, isUserLoading, router, viewedUserId]);
 
 
   const viewedUserDocRef = useMemoFirebase(() => viewedUserId && authUser ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore, authUser]);
