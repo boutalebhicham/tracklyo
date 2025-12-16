@@ -12,48 +12,48 @@ service cloud.firestore {
          resource.data.managerId == request.auth.uid)
       );
 
-      // A user can update their own profile.
+      // A user can update their own profile. A patron can create a RESPONSABLE user.
       allow write: if request.auth != null && request.auth.uid == userId;
-          
-      // A PATRON can create a user document for a RESPONSABLE
       allow create: if request.auth != null &&
                       request.resource.data.role == 'RESPONSABLE' &&
                       request.resource.data.managerId == request.auth.uid &&
+                      exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON';
 
 
-      // Subcollections
+      // Generic rule for all user subcollections
       match /{subcollection}/{docId} {
-        // A user can read/write to their OWN subcollections.
-        // A PATRON can read from their managed RESPONSABLE's subcollections.
+
+        // READ (get, list) rule for all subcollections
+        // A user can read their own subcollection data.
+        // A PATRON can read the subcollection data of a user they manage.
         allow read: if request.auth != null && (
           request.auth.uid == userId ||
-          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
-           get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid)
+          (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+            exists(/databases/$(database)/documents/users/$(userId)) &&
+            get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid
+          )
         );
         
+        // WRITE (create, update, delete) rule for most subcollections.
         // Only the user themselves can write to their subcollections.
-        // This includes transactions, recaps, clockIns etc.
         allow write: if request.auth != null && request.auth.uid == userId;
 
-         match /comments/{commentId} {
+        // Specific rules for comments sub-subcollection
+        match /comments/{commentId} {
             // A PATRON can write a comment on a recap of a user they manage.
             // A user can write a comment on their own recap.
              allow write: if request.auth != null && (
                (
+                  exists(/databases/$(database)/documents/users/$(userId)) &&
                   get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid &&
+                  exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON'
                ) || 
                 request.auth.uid == userId
              );
-              
-             allow read: if request.auth != null && (
-                request.auth.uid == userId ||
-                (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
-                get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid)
-            );
         }
       }
     }
