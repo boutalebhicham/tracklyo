@@ -4,7 +4,7 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, FileText, Calendar, ArrowUpRight, Wand, Mic, ArrowRight, Clock } from 'lucide-react'
+import { Plus, FileText, Calendar, ArrowUpRight, Wand, Mic, ArrowRight, Clock, LogIn, LogOut } from 'lucide-react'
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils'
 import type { Transaction, Recap, CalendarEvent, User } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
@@ -15,14 +15,39 @@ type DashboardViewProps = {
   recaps: Recap[]
   events: CalendarEvent[]
   onQuickAdd: (modal: 'addTransaction' | 'addEvent') => void
+  onClockIn: (type: 'start' | 'end') => void;
   setActiveView: (view: string) => void;
 }
 
-const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActiveView }: DashboardViewProps) => {
+const ClockInCard = ({ onClockIn }: { onClockIn: (type: 'start' | 'end') => void }) => {
+    return (
+        <Card className="rounded-4xl shadow-sm">
+            <CardHeader>
+                <CardTitle>Pointage Journalier</CardTitle>
+                <CardDescription>Enregistrez vos heures de début et de fin de journée.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+                 <Button onClick={() => onClockIn('start')} className="w-full rounded-xl" variant="outline">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Début
+                </Button>
+                <Button onClick={() => onClockIn('end')} className="w-full rounded-xl" variant="destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Fin
+                </Button>
+            </CardContent>
+        </Card>
+    );
+};
+
+
+const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, onClockIn, setActiveView }: DashboardViewProps) => {
   const balance = transactions.reduce((acc, tx) => acc + (tx.type === 'BUDGET_ADD' ? tx.amount : -tx.amount), 0)
   const totalBudget = transactions.filter(t => t.type === 'BUDGET_ADD').reduce((acc, tx) => acc + tx.amount, 0)
   const latestRecap = recaps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
   const upcomingEvent = events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
+
+  const isCollaborator = user.role === 'RESPONSABLE';
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -56,6 +81,9 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActi
 
       {/* Right Column */}
       <div className="lg:col-span-2 space-y-6">
+        
+        {isCollaborator && <ClockInCard onClockIn={onClockIn} />}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onQuickAdd('addTransaction')}>
             <CardContent className="p-6 flex items-center gap-4">

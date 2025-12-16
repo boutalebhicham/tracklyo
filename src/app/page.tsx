@@ -7,7 +7,7 @@ import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
-import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile, AddUserForm } from '@/lib/definitions';
+import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile, AddUserForm, ClockIn } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
 import DashboardView from '@/components/app/dashboard-view';
@@ -15,8 +15,9 @@ import FinancesView from '@/components/app/finances-view';
 import ActivityView from '@/components/app/activity-view';
 import CalendarView from '@/components/app/calendar-view';
 import FilesView from '@/components/app/files-view';
+import PointageView from '@/components/app/pointage-view';
 import WhatsAppFab from '@/components/app/whatsapp-fab';
-import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal } from '@/components/app/modals';
+import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal, ClockInModal } from '@/components/app/modals';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
@@ -34,8 +35,8 @@ export default function Home() {
 
   const [activeView, setActiveView] = useState('accueil');
   const [modal, setModal] = useState<string | null>(null);
+  const [clockInType, setClockInType] = useState<'start' | 'end' | null>(null);
 
-  // This is the user whose data is being viewed. It can be the logged-in user or a collaborator.
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
 
   const loggedInUserDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [authUser, firestore]);
@@ -45,7 +46,6 @@ export default function Home() {
     if (!isUserLoading && !authUser) {
       router.push('/login');
     }
-    // When authUser is loaded and loggedInUserData is available, set the initial viewed user.
     if (authUser && loggedInUserData && !viewedUserId) {
         setViewedUserId(authUser.uid);
     }
@@ -55,7 +55,6 @@ export default function Home() {
   const viewedUserDocRef = useMemoFirebase(() => viewedUserId ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore]);
   const { data: viewedUserData } = useDoc<User>(viewedUserDocRef);
 
-  // Fetch collaborators only if the logged-in user is a PATRON
   const collaboratorsQuery = useMemoFirebase(() => {
     if (!authUser || loggedInUserData?.role !== 'PATRON') return null;
     return query(collection(firestore, 'users'), where('managerId', '==', authUser.uid));
@@ -64,11 +63,10 @@ export default function Home() {
 
   const handleLogout = () => {
     if (auth) {
-      // Redirect first, then sign out. This prevents data fetching with a null user.
       router.push('/login');
       setTimeout(() => {
         signOut(auth);
-      }, 300); // Small delay to allow redirection to start
+      }, 300); 
     }
   };
 
@@ -96,12 +94,33 @@ export default function Home() {
   
   const commentsQuery = useMemoFirebase(() => {
     if (!authorId || !recaps || recaps.length === 0) return null;
-    // This is a simplification. For a production app, consider querying comments more efficiently.
     const lastRecapId = recaps[recaps.length - 1].id;
     return query(collection(firestore, `users/${authorId}/recaps/${lastRecapId}/comments`));
   }, [firestore, authorId, recaps]);
   const { data: comments } = useCollection<Comment>(commentsQuery);
 
+  const clockInsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'clockIns')) : null, [firestore, authorId]);
+  const { data: clockIns } = useCollection<ClockIn>(clockInsQuery);
+
+  const handleOpenClockInModal = (type: 'start' | 'end') => {
+    setClockInType(type);
+    setModal('clockIn');
+  };
+
+  const handleAddClockIn = (photoDataUrl: string) => {
+    if (!authorId || !clockInType) return;
+    const ref = collection(firestore, 'users', authorId, 'clockIns');
+    addDocumentNonBlocking(ref, {
+      authorId,
+      type: clockInType,
+      timestamp: new Date().toISOString(),
+      photoUrl: 'data:image/jpeg;base64,...', // Placeholder, will be replaced by actual upload logic later
+    });
+    setModal(null);
+    setClockInType(null);
+    toast({ title: `Pointage de ${clockInType === 'start' ? 'début' : 'fin'} de journée enregistré!` });
+  };
+  
   const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>) => {
     if (!authorId) return;
     const ref = collection(firestore, 'users', authorId, 'transactions');
@@ -158,7 +177,7 @@ export default function Home() {
         throw new Error(errorData.message || "La création de l'utilisateur a échoué.");
       }
       
-      const { uid } = await response.json();
+      await response.json();
 
       toast({ title: "Collaborateur ajouté !", description: `${newUser.name} peut maintenant se connecter.` });
 
@@ -204,7 +223,7 @@ export default function Home() {
         return (
              <div className="flex flex-col items-center justify-center pt-20 text-center">
                 <h3 className="text-lg font-semibold">Sélectionnez un collaborateur</h3>
-                <p className="text-muted-foreground">Utilisez le menu en bas pour choisir un profil à consulter.</p>
+                <p className="text-muted-foreground">Utilisez le menu pour choisir un profil à consulter.</p>
             </div>
         )
     }
@@ -218,6 +237,7 @@ export default function Home() {
             recaps={recaps || []}
             events={events || []}
             onQuickAdd={(type) => setModal(type)}
+            onClockIn={handleOpenClockInModal}
             setActiveView={setActiveView}
           />
         );
@@ -247,6 +267,12 @@ export default function Home() {
             onAddEvent={() => setModal('addEvent')} 
           />
         );
+      case 'pointage':
+        return (
+          <PointageView
+            clockIns={clockIns || []}
+          />
+        );
       case 'fichiers':
         return (
           <FilesView 
@@ -255,7 +281,7 @@ export default function Home() {
           />
         );
       default:
-        return <DashboardView user={viewedUserData!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
+        return <DashboardView user={viewedUserData!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} onClockIn={handleOpenClockInModal} setActiveView={setActiveView} />;
     }
   }
 
@@ -323,6 +349,14 @@ export default function Home() {
         onAddDocument={handleAddDocument}
         authorId={authorId!}
       />
+      {clockInType && (
+        <ClockInModal
+          isOpen={modal === 'clockIn'}
+          onClose={() => { setModal(null); setClockInType(null); }}
+          onConfirm={handleAddClockIn}
+          type={clockInType}
+        />
+      )}
     </SidebarProvider>
   );
 }

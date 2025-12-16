@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,8 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Image as ImageIcon, Video, Mic, Upload } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Image as ImageIcon, Video, Mic, Upload, Camera } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
 
 type ModalProps = {
   isOpen: boolean;
@@ -119,7 +121,7 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Type de transaction</Label>
-            <RadioGroup value={transactionType} onValueChange={(v: TransactionType) => setTransactionType(v)} className="grid grid-cols-2 gap-4">
+            <RadioGroup value={transactionType} onValueChange={(v: any) => setTransactionType(v)} className="grid grid-cols-2 gap-4">
               <div>
                 <RadioGroupItem value="BUDGET_ADD" id="r-budget" className="peer sr-only" />
                 <Label htmlFor="r-budget" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
@@ -316,3 +318,111 @@ export const AddDocumentModal = ({ isOpen, onClose, onAddDocument, authorId }: M
         </Dialog>
     )
 }
+
+type ClockInModalProps = ModalProps & {
+  onConfirm: (photoDataUrl: string) => void;
+  type: 'start' | 'end';
+};
+
+export const ClockInModal = ({ isOpen, onClose, onConfirm, type }: ClockInModalProps) => {
+  const { toast } = useToast();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      // Stop camera stream when modal is closed
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+      setPhotoDataUrl(null);
+      setHasCameraPermission(false);
+      return;
+    }
+
+    const getCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setHasCameraPermission(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Accès caméra refusé',
+          description: 'Veuillez autoriser l\'accès à la caméra dans les paramètres de votre navigateur.',
+        });
+        onClose();
+      }
+    };
+
+    getCameraPermission();
+  }, [isOpen, toast, onClose]);
+
+  const takePicture = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        setPhotoDataUrl(dataUrl);
+      }
+    }
+  };
+  
+  const handleConfirm = () => {
+    if (photoDataUrl) {
+      onConfirm(photoDataUrl);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <GlassDialogContent>
+        <DialogHeader>
+          <DialogTitle>Pointage de {type === 'start' ? 'début' : 'fin'} de journée</DialogTitle>
+          <DialogDescription>Prenez une photo pour valider votre présence.</DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <div className="relative w-full aspect-video bg-slate-800 rounded-2xl overflow-hidden">
+            {photoDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoDataUrl} alt="Clock-in proof" className="w-full h-full object-cover" />
+            ) : (
+              <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+            )}
+            {!hasCameraPermission && !photoDataUrl && (
+               <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black/50">
+                  <Camera className="w-12 h-12 mb-4" />
+                  <p className="font-semibold">Activation de la caméra...</p>
+                  <p className="text-sm text-center max-w-xs mt-2">Veuillez autoriser l'accès à la caméra pour continuer.</p>
+               </div>
+            )}
+          </div>
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+        <DialogFooter>
+          {photoDataUrl ? (
+            <>
+              <Button variant="outline" onClick={() => setPhotoDataUrl(null)} className="rounded-xl">Reprendre</Button>
+              <Button onClick={handleConfirm} className="rounded-xl">Confirmer</Button>
+            </>
+          ) : (
+            <Button onClick={takePicture} disabled={!hasCameraPermission} className="w-full rounded-xl">Prendre la photo</Button>
+          )}
+        </DialogFooter>
+      </GlassDialogContent>
+    </Dialog>
+  );
+};

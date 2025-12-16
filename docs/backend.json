@@ -90,6 +90,20 @@
         "size": { "type": "string", "description": "Size of the document." }
       },
       "required": ["id", "name", "type", "date", "authorId", "size"]
+    },
+    "ClockIn": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ClockIn",
+      "type": "object",
+      "description": "Represents a clock-in or clock-out event for a collaborator.",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string", "description": "Reference to the User who clocked in." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "The exact time of the clock-in/out event." },
+        "type": { "type": "string", "enum": ["start", "end"], "description": "The type of event." },
+        "photoUrl": { "type": "string", "description": "URL of the photo taken as proof." }
+      },
+      "required": ["id", "authorId", "timestamp", "type", "photoUrl"]
     }
   },
   "auth": {
@@ -145,6 +159,14 @@
           "entityName": "Document",
           "schema": { "$ref": "#/backend/entities/Document" },
           "description": "Stores documents for a specific user."
+        }
+      },
+      {
+        "path": "/users/{userId}/clockIns/{clockInId}",
+        "definition": {
+          "entityName": "ClockIn",
+          "schema": { "$ref": "#/backend/entities/ClockIn" },
+          "description": "Stores clock-in/out records for a specific user."
         }
       }
     ]

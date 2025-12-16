@@ -34,7 +34,7 @@ service cloud.firestore {
         );
         
         // Only the user themselves can write to their subcollections.
-        // This includes transactions, recaps, etc.
+        // This includes transactions, recaps, clockIns etc.
         allow write: if request.auth != null && request.auth.uid == userId;
 
          match /comments/{commentId} {

@@ -71,3 +71,11 @@ export interface DocumentFile {
   date: string;
   size: string; // e.g., '2.5MB'
 }
+
+export interface ClockIn {
+  id: string;
+  authorId: string;
+  timestamp: string; // ISO string
+  type: 'start' | 'end';
+  photoUrl: string;
+}
