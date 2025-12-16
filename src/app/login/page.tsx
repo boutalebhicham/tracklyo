@@ -12,7 +12,7 @@ import { useAuth, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import { setDocumentNonBlocking } from '@/firebase';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Logo from '@/components/app/logo';
 import { AnimatePresence, motion } from 'framer-motion';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';

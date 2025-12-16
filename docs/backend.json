@@ -11,7 +11,8 @@
         "email": { "type": "string", "description": "The user's email address.", "format": "email" },
         "role": { "type": "string", "description": "The user's role within the application (PATRON or RESPONSABLE)." },
         "avatar": { "type": "string", "description": "URL of the user's profile picture." },
-        "phoneNumber": { "type": "string", "description": "The user's phone number for WhatsApp integration." }
+        "phoneNumber": { "type": "string", "description": "The user's phone number for WhatsApp integration." },
+        "managerId": { "type": "string", "description": "The ID of the manager (PATRON) for this user, if applicable." }
       },
       "required": ["id", "name", "email", "role"]
     },

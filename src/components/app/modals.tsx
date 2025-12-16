@@ -54,17 +54,18 @@ export const PaywallModal = ({ isOpen, onClose }: ModalProps) => (
 export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAddUser: (user: Omit<User, 'id' | 'email'>) => void }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('RESPONSABLE');
-
-
+  
   const handleSubmit = () => {
-    if (name && phone) {
+    if (name) {
       onAddUser({
         name,
         phoneNumber: phone,
-        role: role,
+        role: "RESPONSABLE",
         avatar: `https://picsum.photos/seed/${Date.now()}/100/100`,
       });
+      setName('');
+      setPhone('');
+      onClose();
     }
   };
 
@@ -74,17 +75,7 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
         <DialogHeader><DialogTitle>Ajouter un collaborateur</DialogTitle></DialogHeader>
         <div className="space-y-4 py-4">
             <div className="space-y-2"><Label htmlFor="name">Nom complet</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} className="rounded-xl" /></div>
-            <div className="space-y-2"><Label htmlFor="phone">Numéro de téléphone</Label><Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} className="rounded-xl" /></div>
-            <div className="space-y-2">
-              <Label>Rôle</Label>
-              <Select value={role} onValueChange={(v) => setRole(v)}>
-                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent className="rounded-xl backdrop-blur-sm bg-popover/80">
-                    <SelectItem value="PATRON">Patron</SelectItem>
-                    <SelectItem value="RESPONSABLE">Responsable</SelectItem>
-                  </SelectContent>
-              </Select>
-            </div>
+            <div className="space-y-2"><Label htmlFor="phone">Numéro de téléphone (WhatsApp)</Label><Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} className="rounded-xl" /></div>
         </div>
         <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Ajouter</Button></DialogFooter>
       </GlassDialogContent>

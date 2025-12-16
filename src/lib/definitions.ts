@@ -9,19 +9,12 @@ export interface User {
   role: string; // Changed from UserRole to string
   avatar: string;
   phoneNumber: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  authorId: string;
-  createdAt: string;
+  managerId?: string; // ID of the PATRON
 }
 
 export interface Transaction {
   id: string;
   authorId: string;
-  // projectId: string;
   amount: number;
   reason: string;
   date: string;
@@ -32,7 +25,6 @@ export interface Transaction {
 export interface Recap {
   id:string;
   authorId: string;
-  // projectId: string;
   title: string;
   type: RecapType;
   description: string;
@@ -45,7 +37,6 @@ export interface Comment {
   id: string;
   recapId: string;
   authorId: string;
-  // projectId: string;
   content: string;
   date: string;
 }
@@ -53,7 +44,6 @@ export interface Comment {
 export interface CalendarEvent {
   id: string;
   authorId: string;
-  // projectId: string;
   title: string;
   description: string;
   date: string; // ISO string for datetime
@@ -62,7 +52,6 @@ export interface CalendarEvent {
 export interface DocumentFile {
   id: string;
   authorId: string;
-  // projectId: string;
   name: string;
   type: string; // e.g., 'PDF', 'Image'
   date: string;

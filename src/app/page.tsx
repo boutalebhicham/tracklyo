@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
 import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
@@ -19,11 +19,11 @@ import WhatsAppFab from '@/components/app/whatsapp-fab';
 import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal } from '@/components/app/modals';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useFirestore } from '@/firebase';
-import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { addDocumentNonBlocking } from '@/firebase';
 
 
 export default function Home() {
-  const { user, isUserLoading } = useUser();
+  const { user: authUser, isUserLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
   const firestore = useFirestore();
@@ -31,21 +31,32 @@ export default function Home() {
   const [activeView, setActiveView] = useState('accueil');
   const [modal, setModal] = useState<string | null>(null);
 
+  // This is the user whose data is being viewed. It can be the logged-in user or a collaborator.
+  const [viewedUserId, setViewedUserId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!isUserLoading && !authUser) {
       router.push('/login');
     }
-  }, [user, isUserLoading, router]);
+    // When authUser is loaded, set the initial viewed user to be the logged-in user.
+    if (authUser && !viewedUserId) {
+        setViewedUserId(authUser.uid);
+    }
+  }, [authUser, isUserLoading, router, viewedUserId]);
 
-  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [user, firestore]);
-  const { data: currentUserData } = useDoc<User>(userDocRef);
+  const loggedInUserDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [authUser, firestore]);
+  const { data: loggedInUserData } = useDoc<User>(loggedInUserDocRef);
 
-  const responsablesQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'users'), where('role', '==', 'RESPONSABLE'));
-  }, [firestore, user]);
-  const { data: responsables } = useCollection<User>(responsablesQuery);
-  
+  const viewedUserDocRef = useMemoFirebase(() => viewedUserId ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore]);
+  const { data: viewedUserData } = useDoc<User>(viewedUserDocRef);
+
+  // Fetch collaborators only if the logged-in user is a PATRON
+  const collaboratorsQuery = useMemoFirebase(() => {
+    if (!authUser || loggedInUserData?.role !== 'PATRON') return null;
+    return query(collection(firestore, 'users'), where('managerId', '==', authUser.uid));
+  }, [firestore, authUser, loggedInUserData?.role]);
+  const { data: collaborators } = useCollection<User>(collaboratorsQuery);
+
   const handleLogout = () => {
     if (auth) {
       signOut(auth);
@@ -53,14 +64,14 @@ export default function Home() {
   };
 
   const handleAddCollaborator = () => {
-    if (responsables && responsables.length >= 1) { 
+    if (collaborators && collaborators.length >= 1) { 
       setModal('paywall');
     } else {
       setModal('addUser');
     }
   };
 
-  const authorId = currentUserData?.id;
+  const authorId = viewedUserId;
 
   const transactionsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'transactions')) : null, [firestore, authorId]);
   const { data: transactions } = useCollection<Transaction>(transactionsQuery);
@@ -78,6 +89,8 @@ export default function Home() {
     if (!authorId || !recaps?.length) return null;
     const recapIds = recaps.map(r => r.id);
     if (recapIds.length === 0) return null;
+    // This is not ideal, it should fetch comments for all recaps.
+    // For now, it fetches for the first one as a placeholder.
     return query(collection(firestore, `users/${authorId}/recaps/${recapIds[0]}/comments`));
   }, [firestore, authorId, recaps]);
   const { data: comments } = useCollection<Comment>(commentsQuery);
@@ -115,11 +128,13 @@ export default function Home() {
   };
   
   const handleAddUser = (newUser: Omit<User, 'id' | 'email' >) => {
+    if (!authUser) return;
     const ref = collection(firestore, 'users');
     const fullUser = {
       ...newUser,
       id: `user-${Date.now()}`,
       email: `${newUser.name.split(' ').join('.').toLowerCase()}@tracklyo.com`,
+      managerId: authUser.uid,
     } as User
 
     addDocumentNonBlocking(ref, fullUser);
@@ -136,10 +151,19 @@ export default function Home() {
      });
     setModal(null);
   };
-
-  const whatsAppTarget = currentUserData;
   
-  if (isUserLoading || !user || !currentUserData) {
+  const allUsersForActivity = useMemo(() => {
+    const userList: User[] = [];
+    if(loggedInUserData) userList.push(loggedInUserData);
+    if(collaborators) userList.push(...collaborators);
+    if(viewedUserData && !userList.find(u => u.id === viewedUserData.id)) {
+        userList.push(viewedUserData);
+    }
+    return userList;
+  }, [loggedInUserData, collaborators, viewedUserData]);
+
+
+  if (isUserLoading || !authUser || !loggedInUserData || !viewedUserData) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement de votre espace de travail...</p>
@@ -152,7 +176,7 @@ export default function Home() {
       case 'accueil':
         return (
           <DashboardView
-            user={currentUserData!}
+            user={viewedUserData!}
             transactions={transactions || []}
             recaps={recaps || []}
             events={events || []}
@@ -165,7 +189,7 @@ export default function Home() {
           <FinancesView 
             transactions={transactions || []} 
             onAddTransaction={() => setModal('addTransaction')}
-            viewAs={currentUserData.role}
+            viewAs={loggedInUserData.role} // The logged-in user's role determines if they can add budget
           />
         );
       case 'activite':
@@ -173,9 +197,9 @@ export default function Home() {
           <ActivityView
             recaps={recaps || []}
             comments={comments || []}
-            users={responsables ? [...responsables, currentUserData] : [currentUserData]}
+            users={allUsersForActivity}
             onAddRecap={() => setModal('addRecap')}
-            currentUser={currentUserData}
+            currentUser={loggedInUserData}
             authorId={authorId!}
           />
         );
@@ -194,7 +218,7 @@ export default function Home() {
           />
         );
       default:
-        return <DashboardView user={currentUserData!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
+        return <DashboardView user={viewedUserData!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
     }
   }
 
@@ -202,15 +226,18 @@ export default function Home() {
     <SidebarProvider>
       <div className="flex w-full min-h-screen bg-gray-100 dark:bg-neutral-900">
         <AppSidebar
-          currentUser={currentUserData}
+          loggedInUser={loggedInUserData}
+          collaborators={collaborators || []}
           activeView={activeView}
           setActiveView={setActiveView}
           onLogout={handleLogout}
           onAddCollaborator={handleAddCollaborator}
+          viewedUserId={viewedUserId}
+          setViewedUserId={setViewedUserId}
         />
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6 lg:p-8">
-            <AppHeader user={currentUserData} />
+            <AppHeader user={viewedUserData} />
             <div className="mt-6">
               {renderContent()}
             </div>
@@ -218,7 +245,7 @@ export default function Home() {
         </main>
       </div>
 
-      {whatsAppTarget && <WhatsAppFab phoneNumber={whatsAppTarget.phoneNumber} />}
+      {viewedUserData && <WhatsAppFab phoneNumber={viewedUserData.phoneNumber} />}
       
       <PaywallModal isOpen={modal === 'paywall'} onClose={() => setModal(null)} />
       <AddUserModal isOpen={modal === 'addUser'} onClose={() => setModal(null)} onAddUser={handleAddUser} />
@@ -227,7 +254,7 @@ export default function Home() {
         onClose={() => setModal(null)} 
         onAddTransaction={handleAddTransaction} 
         authorId={authorId!}
-        viewAs={currentUserData.role}
+        viewAs={loggedInUserData.role}
         transactions={transactions || []}
       />
       <AddRecapModal 

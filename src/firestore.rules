@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      // A user can read their own profile.
+      // A PATRON can read the profile of a RESPONSABLE they manage.
+      allow read: if request.auth != null && (
+        request.auth.uid == userId || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+         resource.data.managerId == request.auth.uid)
+      );
+
+      // A user can write to their own profile.
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Subcollections
+      match /{subcollection}/{docId} {
+        // A user can read/write to their OWN subcollections.
+        // A PATRON can read from their managed RESPONSABLE's subcollections.
+        allow read: if request.auth != null && (
+          request.auth.uid == userId ||
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+           get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid)
+        );
+        allow write: if request.auth != null && request.auth.uid == userId;
+
+         match /comments/{commentId} {
+            // A user can read/write comments if they can read the parent recap.
+            allow read, write: if request.auth != null && (
+                get(/databases/$(database)/documents/users/$(userId)).data.authorId == request.auth.uid ||
+                (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+                get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid)
+            );
+        }
+      }
+    }
+  }
+}
