@@ -7,7 +7,7 @@ import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
-import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile, AddUserForm, ClockIn } from '@/lib/definitions';
+import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile, AddUserForm } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
 import DashboardView from '@/components/app/dashboard-view';
@@ -15,9 +15,8 @@ import FinancesView from '@/components/app/finances-view';
 import ActivityView from '@/components/app/activity-view';
 import CalendarView from '@/components/app/calendar-view';
 import FilesView from '@/components/app/files-view';
-import PointageView from '@/components/app/pointage-view';
 import WhatsAppFab from '@/components/app/whatsapp-fab';
-import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal, ClockInModal } from '@/components/app/modals';
+import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal } from '@/components/app/modals';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +34,6 @@ export default function Home() {
 
   const [activeView, setActiveView] = useState('accueil');
   const [modal, setModal] = useState<string | null>(null);
-  const [clockInType, setClockInType] = useState<'start' | 'end' | null>(null);
 
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
 
@@ -99,27 +97,6 @@ export default function Home() {
   }, [firestore, authorId, recaps]);
   const { data: comments } = useCollection<Comment>(commentsQuery);
 
-  const clockInsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'clockIns')) : null, [firestore, authorId]);
-  const { data: clockIns } = useCollection<ClockIn>(clockInsQuery);
-
-  const handleOpenClockInModal = (type: 'start' | 'end') => {
-    setClockInType(type);
-    setModal('clockIn');
-  };
-
-  const handleAddClockIn = (photoDataUrl: string) => {
-    if (!authorId || !clockInType) return;
-    const ref = collection(firestore, 'users', authorId, 'clockIns');
-    addDocumentNonBlocking(ref, {
-      authorId,
-      type: clockInType,
-      timestamp: new Date().toISOString(),
-      photoUrl: 'data:image/jpeg;base64,...', // Placeholder, will be replaced by actual upload logic later
-    });
-    setModal(null);
-    setClockInType(null);
-    toast({ title: `Pointage de ${clockInType === 'start' ? 'début' : 'fin'} de journée enregistré!` });
-  };
   
   const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>) => {
     if (!authorId) return;
@@ -237,7 +214,6 @@ export default function Home() {
             recaps={recaps || []}
             events={events || []}
             onQuickAdd={(type) => setModal(type)}
-            onClockIn={handleOpenClockInModal}
             setActiveView={setActiveView}
           />
         );
@@ -267,12 +243,6 @@ export default function Home() {
             onAddEvent={() => setModal('addEvent')} 
           />
         );
-      case 'pointage':
-        return (
-          <PointageView
-            clockIns={clockIns || []}
-          />
-        );
       case 'fichiers':
         return (
           <FilesView 
@@ -281,7 +251,7 @@ export default function Home() {
           />
         );
       default:
-        return <DashboardView user={viewedUserData!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} onClockIn={handleOpenClockInModal} setActiveView={setActiveView} />;
+        return <DashboardView user={viewedUserData!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
     }
   }
 
@@ -349,14 +319,6 @@ export default function Home() {
         onAddDocument={handleAddDocument}
         authorId={authorId!}
       />
-      {clockInType && (
-        <ClockInModal
-          isOpen={modal === 'clockIn'}
-          onClose={() => { setModal(null); setClockInType(null); }}
-          onConfirm={handleAddClockIn}
-          type={clockInType}
-        />
-      )}
     </SidebarProvider>
   );
 }
