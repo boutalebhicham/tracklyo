@@ -12,16 +12,16 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Users can read/write their own profile
+      // Les utilisateurs peuvent lire/écrire leur propre profil
       allow read, write: if isOwner(userId);
-      allow create: if isSignedIn() && request.resource.data.id == userId;
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
 
-      // Users can list their own projects
+      // Les utilisateurs peuvent lire et écrire dans leurs propres sous-collections
       match /projects/{projectId} {
         allow read, write: if isOwner(userId);
 
-        // All project-specific data is nested under the project.
-        // Access is granted if the user owns the parent project.
+        // Les données spécifiques au projet sont imbriquées ici.
+        // L'accès est accordé si l'utilisateur est propriétaire du projet parent.
         match /recaps/{recapId} {
           allow read, write: if isOwner(userId);
           
@@ -44,8 +44,8 @@ service cloud.firestore {
       }
     }
     
-    // This rule allows any signed-in user to list all users.
-    // This is useful for features like collaborator selection.
+    // Cette règle permet à tout utilisateur connecté de lister tous les utilisateurs.
+    // C'est utile pour des fonctionnalités comme la sélection de collaborateurs.
     match /users/{userId} {
         allow list: if isSignedIn();
     }
