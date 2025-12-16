@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
-import type { DocumentFile } from '@/lib/definitions'
+import type { Document as DocumentFile } from '@/lib/definitions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,16 +12,24 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Upload, Search, FileText, MoreHorizontal, Download, Edit, Trash2 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { collection, query } from 'firebase/firestore'
+import { Skeleton } from '../ui/skeleton'
 
 type FilesViewProps = {
-  documents: DocumentFile[]
+  viewedUserId: string | null
   onAddDocument: () => void
 }
 
-const FilesView = ({ documents, onAddDocument }: FilesViewProps) => {
+const FilesView = ({ viewedUserId, onAddDocument }: FilesViewProps) => {
   const [searchTerm, setSearchTerm] = useState('')
 
+  const firestore = useFirestore();
+  const documentsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'documents')) : null, [firestore, viewedUserId]);
+  const { data: documents, isLoading } = useCollection<DocumentFile>(documentsQuery);
+
   const filteredDocuments = useMemo(() => {
+    if (!documents) return [];
     return documents.filter(doc =>
       doc.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -32,6 +40,19 @@ const FilesView = ({ documents, onAddDocument }: FilesViewProps) => {
     if (type === 'application/pdf') return <FileText className="text-red-500" />;
     return <FileText className="text-gray-500" />;
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-1/2" />
+        <Skeleton className="h-64 rounded-4xl" />
+      </div>
+    )
+  }
+
+  if (!documents) {
+    return <p>Impossible de charger les documents.</p>
+  }
 
   return (
     <div className="space-y-6">

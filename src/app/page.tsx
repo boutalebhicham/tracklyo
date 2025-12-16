@@ -5,9 +5,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
-import type { User, Transaction, Recap, Event, Comment, Document as DocumentFile, AddUserForm } from '@/lib/definitions';
+import type { User, AddUserForm, Transaction, Recap, Event, DocumentFile } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
 import DashboardView from '@/components/app/dashboard-view';
@@ -18,11 +18,12 @@ import FilesView from '@/components/app/files-view';
 import WhatsAppFab from '@/components/app/whatsapp-fab';
 import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal } from '@/components/app/modals';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AppMobileHeader from '@/components/app/app-mobile-header';
 import AppBottomNav from '@/components/app/app-bottom-nav';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const { user: authUser, isUserLoading } = useUser();
@@ -41,7 +42,7 @@ export default function Home() {
     if (authUser && !viewedUserId) {
       setViewedUserId(authUser.uid);
     }
-  }, [authUser, viewedUserId]);
+  }, [authUser]);
 
   useEffect(() => {
     if (!isUserLoading && !authUser) {
@@ -63,27 +64,6 @@ export default function Home() {
     return query(collection(firestore, 'users'), where('managerId', '==', authUser.uid));
   }, [firestore, authUser, loggedInUserData]);
   const { data: collaborators } = useCollection<User>(collaboratorsQuery);
-  
-  // Data queries now depend on `viewedUserId`, which is stable after initial load.
-  const transactionsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'transactions')) : null, [firestore, viewedUserId]);
-  const { data: transactions } = useCollection<Transaction>(transactionsQuery);
-  
-  const recapsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'recaps')) : null, [firestore, viewedUserId]);
-  const { data: recaps } = useCollection<Recap>(recapsQuery);
-
-  const eventsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'events')) : null, [firestore, viewedUserId]);
-  const { data: events } = useCollection<Event>(eventsQuery);
-
-  const documentsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'documents')) : null, [firestore, viewedUserId]);
-  const { data: documents } = useCollection<DocumentFile>(documentsQuery);
-  
-  const commentsQuery = useMemoFirebase(() => {
-    if (!viewedUserId || !recaps || recaps.length === 0) return null;
-    const lastRecapId = recaps.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.id;
-    if (!lastRecapId) return null;
-    return query(collection(firestore, `users/${viewedUserId}/recaps/${lastRecapId}/comments`));
-  }, [firestore, viewedUserId, recaps]);
-  const { data: comments } = useCollection<Comment>(commentsQuery);
 
   const handleLogout = () => {
     signOut(auth);
@@ -98,7 +78,7 @@ export default function Home() {
     }
   };
   
-  const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>) => {
+  const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>, currentTransactions: Transaction[]) => {
     if (!viewedUserId) return;
     const ref = collection(firestore, 'users', viewedUserId, 'transactions');
     addDocumentNonBlocking(ref, {
@@ -182,7 +162,7 @@ export default function Home() {
     return userList;
   }, [loggedInUserData, collaborators]);
 
-  if (isUserLoading || !authUser) {
+  if (isUserLoading || !authUser || !viewedUserId) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement de votre espace de travail...</p>
@@ -193,58 +173,24 @@ export default function Home() {
   const renderContent = () => {
     switch(activeView) {
       case 'accueil':
-        return (
-          <DashboardView
-            user={viewedUserData} // Pass viewedUserData, which can be null initially
-            transactions={transactions || []}
-            recaps={recaps || []}
-            events={events || []}
-            onQuickAdd={(type) => setModal(type)}
-            setActiveView={setActiveView}
-          />
-        );
+        return <DashboardView viewedUserId={viewedUserId} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
       case 'finances':
-        return (
-          <FinancesView 
-            transactions={transactions || []} 
-            onAddTransaction={() => setModal('addTransaction')}
-            viewAs={loggedInUserData?.role}
-          />
-        );
+        return <FinancesView viewedUserId={viewedUserId} onAddTransaction={() => setModal('addTransaction')} viewAs={loggedInUserData?.role} />;
       case 'activite':
-        return (
-          <ActivityView
-            recaps={recaps || []}
-            comments={comments || []}
-            users={allUsersForActivity}
-            onAddRecap={() => setModal('addRecap')}
-            currentUser={loggedInUserData}
-            authorId={viewedUserId!}
-          />
-        );
+        return <ActivityView viewedUserId={viewedUserId} users={allUsersForActivity} onAddRecap={() => setModal('addRecap')} currentUser={loggedInUserData} />;
       case 'agenda':
-        return (
-          <CalendarView 
-            events={events || []} 
-            onAddEvent={() => setModal('addEvent')} 
-          />
-        );
+        return <CalendarView viewedUserId={viewedUserId} onAddEvent={() => setModal('addEvent')} />;
       case 'fichiers':
-        return (
-          <FilesView 
-            documents={documents || []} 
-            onAddDocument={() => setModal('addDocument')}
-          />
-        );
+        return <FilesView viewedUserId={viewedUserId} onAddDocument={() => setModal('addDocument')} />;
       default:
-        return <DashboardView user={viewedUserData} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
+        return <DashboardView viewedUserId={viewedUserId} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
     }
   }
 
   return (
     <SidebarProvider>
       <div className="flex w-full min-h-screen bg-gray-100 dark:bg-neutral-900">
-        {loggedInUserData && (
+        {loggedInUserData ? (
           <AppSidebar
             loggedInUser={loggedInUserData}
             collaborators={collaborators || []}
@@ -255,6 +201,8 @@ export default function Home() {
             viewedUserId={viewedUserId}
             setViewedUserId={setViewedUserId}
           />
+        ) : (
+          <div className="hidden md:flex w-72"><Skeleton className="h-full w-full" /></div>
         )}
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
            {isMobile && loggedInUserData && (
@@ -289,7 +237,6 @@ export default function Home() {
             onAddTransaction={handleAddTransaction} 
             authorId={viewedUserId}
             viewAs={loggedInUserData.role}
-            transactions={transactions || []}
           />
           <AddRecapModal 
             isOpen={modal === 'addRecap'} 

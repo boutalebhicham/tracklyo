@@ -17,11 +17,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm } from '@/lib/definitions';
+import type { User, Currency, Transaction, Recap, Event as CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Image as ImageIcon, Video, Mic, Upload, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+
 
 type ModalProps = {
   isOpen: boolean;
@@ -84,14 +87,20 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
 };
 
 
-export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, viewAs, transactions }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id' | 'authorId' | 'date'>) => void, authorId: string, viewAs: string, transactions: Transaction[] }) => {
+export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, viewAs }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id' | 'authorId' | 'date'>, transactions: Transaction[]) => void, authorId: string, viewAs: string }) => {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [currency, setCurrency] = useState<Currency>('EUR');
   const [transactionType, setTransactionType] = useState<TransactionType>('EXPENSE');
   const [error, setError] = useState('');
 
+  const firestore = useFirestore();
+  const transactionsQuery = useMemoFirebase(() => authorId ? collection(firestore, 'users', authorId, 'transactions') : null, [authorId, firestore]);
+  const { data: transactions } = useCollection<Transaction>(transactionsQuery);
+
   const handleSubmit = () => {
+    if (!transactions) return;
+
     const numericAmount = parseFloat(amount);
     if (!numericAmount || !reason) {
       setError('Veuillez remplir tous les champs.');
@@ -107,7 +116,7 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
       }
     }
     
-    onAddTransaction({ amount: numericAmount, reason, currency, type: transactionType });
+    onAddTransaction({ amount: numericAmount, reason, currency, type: transactionType }, transactions);
     setAmount('');
     setReason('');
     setError('');

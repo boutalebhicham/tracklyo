@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react'
@@ -10,31 +11,46 @@ import { Input } from '@/components/ui/input'
 import { Plus, MessageSquare, Send, Camera } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { useFirestore } from '@/firebase'
-import { addDocumentNonBlocking } from '@/firebase'
-import { collection } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates'
+import { collection, query } from 'firebase/firestore'
 import Image from 'next/image'
+import { Skeleton } from '../ui/skeleton'
 
 type ActivityViewProps = {
-  recaps: Recap[]
-  comments: Comment[]
+  viewedUserId: string | null
   users: User[]
   onAddRecap: () => void
   currentUser: User | null
-  authorId: string
 }
 
-const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, authorId }: ActivityViewProps) => {
+const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: ActivityViewProps) => {
+
+  const firestore = useFirestore();
+  
+  const recapsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'recaps')) : null, [firestore, viewedUserId]);
+  const { data: recaps, isLoading: areRecapsLoading } = useCollection<Recap>(recapsQuery);
+
+  const commentsQuery = useMemoFirebase(() => {
+    if (!viewedUserId || !recaps || recaps.length === 0) return null;
+    // This part might need adjustment if you want comments from all recaps, not just the last one.
+    // For simplicity, we'll fetch comments for the most recent recap.
+    const lastRecapId = recaps.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.id;
+    if (!lastRecapId) return null;
+    return query(collection(firestore, `users/${viewedUserId}/recaps/${lastRecapId}/comments`));
+  }, [firestore, viewedUserId, recaps]);
+  const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+
+  const isLoading = areRecapsLoading || areCommentsLoading;
 
   const getUser = (id: string) => users.find(u => u.id === id)
-  const firestore = useFirestore();
 
   // The current logged-in user can only add recaps if they are viewing their own profile.
-  const canAddRecap = currentUser?.id === authorId;
+  const canAddRecap = currentUser?.id === viewedUserId;
 
   const handleAddComment = (recapId: string, content: string) => {
-    if (!content.trim() || !currentUser) return;
-    const ref = collection(firestore, 'users', authorId, 'recaps', recapId, 'comments');
+    if (!content.trim() || !currentUser || !viewedUserId) return;
+    const ref = collection(firestore, 'users', viewedUserId, 'recaps', recapId, 'comments');
     addDocumentNonBlocking(ref, {
       recapId,
       authorId: currentUser.id,
@@ -44,7 +60,25 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, author
     // Clear input field after submission if you control it with state
   };
 
-  const sortedRecaps = recaps.sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+  const sortedRecaps = useMemo(() => {
+    if (!recaps) return [];
+    return recaps.sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+  }, [recaps]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+            <Skeleton className="h-10 w-48" />
+        </div>
+        <div className="max-w-3xl mx-auto space-y-6">
+          <Skeleton className="h-24 w-full rounded-4xl" />
+          <Skeleton className="h-64 w-full rounded-4xl" />
+          <Skeleton className="h-64 w-full rounded-4xl" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -86,7 +120,7 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, author
           </div>
         ) : (
             sortedRecaps.map(recap => {
-                const recapComments = comments.filter(c => c.recapId === recap.id);
+                const recapComments = comments ? comments.filter(c => c.recapId === recap.id) : [];
                 const author = getUser(recap.authorId);
                 return (
                     <Card key={recap.id} className="rounded-4xl flex flex-col bg-card overflow-hidden w-full">

@@ -10,24 +10,39 @@ import { formatCurrency, formatCurrencyCompact } from '@/lib/utils'
 import type { Transaction, Recap, Event, User } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
 import { Skeleton } from '../ui/skeleton'
+import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase'
+import { collection, doc, query } from 'firebase/firestore'
 
 type DashboardViewProps = {
-  user: User | null
-  transactions: Transaction[]
-  recaps: Recap[]
-  events: Event[]
+  viewedUserId: string | null
   onQuickAdd: (modal: 'addTransaction' | 'addEvent') => void
   setActiveView: (view: string) => void;
 }
 
 
-const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActiveView }: DashboardViewProps) => {
-  const balance = transactions.reduce((acc, tx) => acc + (tx.type === 'BUDGET_ADD' ? tx.amount : -tx.amount), 0)
-  const totalBudget = transactions.filter(t => t.type === 'BUDGET_ADD').reduce((acc, tx) => acc + tx.amount, 0)
-  const latestRecap = recaps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-  const upcomingEvent = events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
+const DashboardView = ({ viewedUserId, onQuickAdd, setActiveView }: DashboardViewProps) => {
+  const firestore = useFirestore();
 
-  if (!user) {
+  const userDocRef = useMemoFirebase(() => viewedUserId ? doc(firestore, 'users', viewedUserId) : null, [firestore, viewedUserId]);
+  const { data: user, isLoading: isUserLoading } = useDoc<User>(userDocRef);
+
+  const transactionsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'transactions')) : null, [firestore, viewedUserId]);
+  const { data: transactions, isLoading: areTransactionsLoading } = useCollection<Transaction>(transactionsQuery);
+  
+  const recapsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'recaps')) : null, [firestore, viewedUserId]);
+  const { data: recaps, isLoading: areRecapsLoading } = useCollection<Recap>(recapsQuery);
+
+  const eventsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'events')) : null, [firestore, viewedUserId]);
+  const { data: events, isLoading: areEventsLoading } = useCollection<Event>(eventsQuery);
+
+  const isLoading = isUserLoading || areTransactionsLoading || areRecapsLoading || areEventsLoading;
+  
+  const balance = transactions ? transactions.reduce((acc, tx) => acc + (tx.type === 'BUDGET_ADD' ? tx.amount : -tx.amount), 0) : 0;
+  const totalBudget = transactions ? transactions.filter(t => t.type === 'BUDGET_ADD').reduce((acc, tx) => acc + tx.amount, 0) : 0;
+  const latestRecap = recaps ? recaps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] : null;
+  const upcomingEvent = events ? events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] : null;
+
+  if (isLoading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
@@ -47,8 +62,13 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActi
     );
   }
 
-  const isCollaborator = user.role === 'RESPONSABLE';
-  const canManage = user.role === 'PATRON';
+  if (!user) {
+    return (
+      <div className="text-center py-16">
+        <p>Impossible de charger les données de l'utilisateur.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

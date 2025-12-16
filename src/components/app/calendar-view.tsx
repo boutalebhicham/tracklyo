@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState } from 'react'
-import type { CalendarEvent } from '@/lib/definitions'
+import type { Event as CalendarEvent } from '@/lib/definitions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -9,21 +10,44 @@ import { format, parseISO, startOfWeek, addDays, isSameDay, getDay } from 'date-
 import { fr } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { collection, query } from 'firebase/firestore'
+import { Skeleton } from '../ui/skeleton'
 
 type CalendarViewProps = {
-  events: CalendarEvent[]
+  viewedUserId: string | null
   onAddEvent: () => void
 }
 
-const CalendarView = ({ events, onAddEvent }: CalendarViewProps) => {
+const CalendarView = ({ viewedUserId, onAddEvent }: CalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date())
+  
+  const firestore = useFirestore();
+  const eventsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'events')) : null, [firestore, viewedUserId]);
+  const { data: events, isLoading } = useCollection<CalendarEvent>(eventsQuery);
+
   const weekStartsOn = 1; // Monday
   const weekStart = startOfWeek(currentDate, { weekStartsOn })
   
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i))
   const [selectedDay, setSelectedDay] = useState(currentDate)
 
-  const dayEvents = events.filter(event => isSameDay(parseISO(event.date), selectedDay))
+  const dayEvents = events ? events.filter(event => isSameDay(parseISO(event.date), selectedDay)) : [];
+
+  if (isLoading) {
+    return (
+       <div className="space-y-6">
+          <Skeleton className="h-10 w-1/2" />
+          <Skeleton className="h-28 rounded-4xl" />
+          <Skeleton className="h-48 rounded-4xl" />
+      </div>
+    )
+  }
+
+  if (!events) {
+    return <p>Impossible de charger l'agenda.</p>
+  }
+
 
   return (
     <div className="space-y-6">

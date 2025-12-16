@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useMemo } from 'react'
@@ -12,22 +13,34 @@ import { calculateBalance, convertCurrency, formatCurrency, formatCurrencyCompac
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Plus, ArrowDown, ArrowUp, Wallet, Clock, MoreHorizontal } from 'lucide-react'
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { collection, query } from 'firebase/firestore'
+import { Skeleton } from '../ui/skeleton'
 
 type FinancesViewProps = {
-  transactions: Transaction[]
+  viewedUserId: string | null
   onAddTransaction: () => void
   viewAs: string | undefined
 }
 
-const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewProps) => {
+const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewProps) => {
   const [currentCurrency, setCurrentCurrency] = useState<Currency>('EUR')
-  const { balance, totalBudget, totalExpenses } = calculateBalance(transactions)
+  
+  const firestore = useFirestore();
+  const transactionsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'transactions')) : null, [firestore, viewedUserId]);
+  const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
+
+  const { balance, totalBudget, totalExpenses } = useMemo(() => {
+    if (!transactions) return { balance: 0, totalBudget: 0, totalExpenses: 0 };
+    return calculateBalance(transactions);
+  }, [transactions]);
 
   const displayBalance = useMemo(() => convertCurrency(balance, 'EUR', currentCurrency), [balance, currentCurrency])
   const displayTotalBudget = useMemo(() => convertCurrency(totalBudget, 'EUR', currentCurrency), [totalBudget, currentCurrency])
   const displayTotalExpenses = useMemo(() => convertCurrency(totalExpenses, 'EUR', currentCurrency), [totalExpenses, currentCurrency])
 
   const chartData = useMemo(() => {
+    if (!transactions) return [];
     const monthlyData: { [key: string]: { budget: number, expenses: number } } = {}
     
     transactions.forEach(tx => {
@@ -58,6 +71,23 @@ const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewPr
   const handleCurrencyChange = (currency: Currency) => {
     setCurrentCurrency(currency);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-1/2" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-[250px] rounded-4xl" />
+          <Skeleton className="h-[350px] lg:col-span-2 rounded-4xl" />
+        </div>
+        <Skeleton className="h-[200px] rounded-4xl" />
+      </div>
+    );
+  }
+
+  if (!transactions) {
+    return <p>Impossible de charger les transactions.</p>
+  }
 
   return (
     <div className="space-y-6">
