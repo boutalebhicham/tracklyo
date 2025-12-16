@@ -79,6 +79,10 @@ const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewPr
               </Button>
             ))}
           </div>
+           <Button onClick={onAddTransaction} className="rounded-full gap-2 px-4 h-10 bg-primary/20 text-primary hover:bg-primary/30">
+            <Plus size={16} />
+            <span>Budget</span>
+          </Button>
           <Button onClick={onAddTransaction} variant="destructive" className="rounded-full gap-2 px-4 h-10">
             <Plus size={16} />
             <span>Dépense</span>
