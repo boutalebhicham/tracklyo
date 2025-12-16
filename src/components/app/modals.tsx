@@ -54,7 +54,7 @@ export const PaywallModal = ({ isOpen, onClose }: ModalProps) => (
 export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAddUser: (user: Omit<User, 'id' | 'email'>) => void }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('');
+  const [role, setRole] = useState('RESPONSABLE');
 
 
   const handleSubmit = () => {
@@ -62,7 +62,7 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
       onAddUser({
         name,
         phoneNumber: phone,
-        role: role || 'PATRON',
+        role: role,
         avatar: `https://picsum.photos/seed/${Date.now()}/100/100`,
       });
     }
@@ -75,7 +75,16 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
         <div className="space-y-4 py-4">
             <div className="space-y-2"><Label htmlFor="name">Nom complet</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} className="rounded-xl" /></div>
             <div className="space-y-2"><Label htmlFor="phone">Numéro de téléphone</Label><Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} className="rounded-xl" /></div>
-            <div className="space-y-2"><Label htmlFor="role">Votre poste</Label><Input id="role" value={role} onChange={e => setRole(e.target.value)} className="rounded-xl" /></div>
+            <div className="space-y-2">
+              <Label>Rôle</Label>
+              <Select value={role} onValueChange={(v) => setRole(v)}>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-xl backdrop-blur-sm bg-popover/80">
+                    <SelectItem value="PATRON">Patron</SelectItem>
+                    <SelectItem value="RESPONSABLE">Responsable</SelectItem>
+                  </SelectContent>
+              </Select>
+            </div>
         </div>
         <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Ajouter</Button></DialogFooter>
       </GlassDialogContent>
@@ -84,13 +93,14 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
 };
 
 
-export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, viewAs, transactions }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id'>) => void, authorId: string, viewAs: string, transactions: Transaction[] }) => {
+export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, viewAs, transactions }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id' | 'authorId' | 'date'>) => void, authorId: string, viewAs: string, transactions: Transaction[] }) => {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [currency, setCurrency] = useState<Currency>('EUR');
+  const [transactionType, setTransactionType] = useState<TransactionType>(viewAs === 'PATRON' ? 'BUDGET_ADD' : 'EXPENSE');
   const [error, setError] = useState('');
-  
-  const type: TransactionType = viewAs.toUpperCase() === 'PATRON' ? 'BUDGET_ADD' : 'EXPENSE';
+
+  const isPatron = viewAs === 'PATRON';
 
   const handleSubmit = () => {
     const numericAmount = parseFloat(amount);
@@ -99,7 +109,7 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
       return;
     }
 
-    if(type === 'EXPENSE') {
+    if(transactionType === 'EXPENSE') {
       const { balance } = calculateBalance(transactions);
       const expenseInEur = numericAmount / CONVERSION_RATES[currency];
       if (expenseInEur > balance) {
@@ -108,17 +118,37 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
       }
     }
     
-    onAddTransaction({ authorId, amount: numericAmount, reason, currency, type, date: new Date().toISOString() });
+    onAddTransaction({ amount: numericAmount, reason, currency, type: transactionType });
     setAmount('');
     setReason('');
     setError('');
+    onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <GlassDialogContent>
-        <DialogHeader><DialogTitle>Ajouter une {type === 'BUDGET_ADD' ? 'entrée de budget' : 'dépense'}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Nouvelle Transaction</DialogTitle></DialogHeader>
         <div className="space-y-4 py-4">
+          {isPatron && (
+             <div className="space-y-2">
+                <Label>Type de transaction</Label>
+                <RadioGroup value={transactionType} onValueChange={(v: TransactionType) => setTransactionType(v)} className="grid grid-cols-2 gap-4">
+                  <div>
+                    <RadioGroupItem value="BUDGET_ADD" id="r-budget" className="peer sr-only" />
+                    <Label htmlFor="r-budget" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                      Ajout de budget
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem value="EXPENSE" id="r-expense" className="peer sr-only" />
+                    <Label htmlFor="r-expense" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                      Dépense
+                    </Label>
+                  </div>
+                </RadioGroup>
+             </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2"><Label htmlFor="amount">Montant</Label><Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-xl" /></div>
             <div className="space-y-2"><Label>Devise</Label>

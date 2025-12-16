@@ -61,14 +61,7 @@ export default function Home() {
     }
   };
 
-  // Determine the user whose data should be displayed.
-  // If the current user is a "PATRON", they can switch views.
-  // If they are a "RESPONSABLE", they only see their own data.
-  const activeUser = useMemoFirebase(() => {
-    if (!currentUserData) return null;
-    return currentUserData; // Simplified to always show current user's data
-  }, [currentUserData]);
-  
+  const activeUser = currentUserData;
   const authorId = activeUser?.id;
 
   const transactionsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'transactions')) : null, [firestore, authorId]);

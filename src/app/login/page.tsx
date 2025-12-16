@@ -15,6 +15,7 @@ import { useFirestore } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase';
 import Logo from '@/components/app/logo';
 import { AnimatePresence, motion } from 'framer-motion';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Adresse email invalide' }),
@@ -23,7 +24,7 @@ const loginSchema = z.object({
 
 const registerSchema = z.object({
   name: z.string().min(1, { message: 'Le nom est requis' }),
-  role: z.string().min(1, { message: 'Le poste est requis' }),
+  role: z.enum(['PATRON', 'RESPONSABLE'], { required_error: 'Veuillez sélectionner un type de compte.' }),
   email: z.string().email({ message: 'Adresse email invalide' }),
   password: z.string().min(6, { message: 'Le mot de passe doit contenir au moins 6 caractères' }),
 });
@@ -145,8 +146,24 @@ export default function LoginPage() {
                     {registerForm.formState.errors.name && <p className="text-red-400 text-sm">{registerForm.formState.errors.name.message}</p>}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="register-role">Votre poste</Label>
-                    <Input id="register-role" {...registerForm.register('role')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
+                    <Label>Type de compte</Label>
+                    <RadioGroup
+                      onValueChange={(value) => registerForm.setValue('role', value as 'PATRON' | 'RESPONSABLE')}
+                      className="grid grid-cols-2 gap-4 mt-2"
+                    >
+                      <div>
+                        <RadioGroupItem value="PATRON" id="patron" className="peer sr-only" />
+                        <Label htmlFor="patron" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                          Compte de gestion
+                        </Label>
+                      </div>
+                      <div>
+                        <RadioGroupItem value="RESPONSABLE" id="responsable" className="peer sr-only" />
+                        <Label htmlFor="responsable" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                          Compte collaborateur
+                        </Label>
+                      </div>
+                    </RadioGroup>
                     {registerForm.formState.errors.role && <p className="text-red-400 text-sm">{registerForm.formState.errors.role.message}</p>}
                   </div>
                   <div className="grid gap-2">
@@ -211,5 +228,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
