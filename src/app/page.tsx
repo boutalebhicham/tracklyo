@@ -20,6 +20,9 @@ import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEven
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import AppMobileHeader from '@/components/app/app-mobile-header';
+import AppBottomNav from '@/components/app/app-bottom-nav';
 
 export default function Home() {
   const { user: authUser, isUserLoading } = useUser();
@@ -27,6 +30,7 @@ export default function Home() {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const [activeView, setActiveView] = useState('accueil');
   const [modal, setModal] = useState<string | null>(null);
@@ -42,7 +46,7 @@ export default function Home() {
       router.push('/login');
     }
     // When authUser is loaded and loggedInUserData is available, set the initial viewed user.
-    if (authUser && !viewedUserId) {
+    if (authUser && loggedInUserData && !viewedUserId) {
         setViewedUserId(authUser.uid);
     }
   }, [authUser, isUserLoading, router, loggedInUserData, viewedUserId]);
@@ -196,7 +200,7 @@ export default function Home() {
         return (
              <div className="flex flex-col items-center justify-center pt-20 text-center">
                 <h3 className="text-lg font-semibold">Sélectionnez un collaborateur</h3>
-                <p className="text-muted-foreground">Utilisez le menu en bas à gauche pour choisir un profil à consulter.</p>
+                <p className="text-muted-foreground">Utilisez le menu en bas pour choisir un profil à consulter.</p>
             </div>
         )
     }
@@ -264,14 +268,25 @@ export default function Home() {
           viewedUserId={viewedUserId}
           setViewedUserId={setViewedUserId}
         />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
+           {isMobile && (
+            <AppMobileHeader 
+              loggedInUser={loggedInUserData}
+              collaborators={collaborators || []}
+              viewedUserId={viewedUserId}
+              setViewedUserId={setViewedUserId}
+              onAddCollaborator={handleAddCollaborator}
+              onLogout={handleLogout}
+            />
+          )}
           <div className="p-4 sm:p-6 lg:p-8">
-            <AppHeader user={viewedUserData} />
+            {!isMobile && <AppHeader user={viewedUserData} />}
             <div className="mt-6">
               {renderContent()}
             </div>
           </div>
         </main>
+        {isMobile && <AppBottomNav activeView={activeView} setActiveView={setActiveView} />}
       </div>
 
       {viewedUserData && <WhatsAppFab phoneNumber={viewedUserData.phoneNumber} />}
@@ -307,5 +322,3 @@ export default function Home() {
     </SidebarProvider>
   );
 }
-
-    

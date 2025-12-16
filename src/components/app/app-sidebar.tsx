@@ -28,7 +28,7 @@ type AppSidebarProps = {
   setViewedUserId: (id: string) => void;
 }
 
-const menuItems = [
+export const menuItems = [
   { id: 'accueil', label: 'Accueil', icon: LayoutGrid },
   { id: 'activite', label: 'Activité', icon: Activity },
   { id: 'agenda', label: 'Agenda', icon: Calendar },
@@ -54,7 +54,7 @@ const AppSidebar = ({
   const isPatron = loggedInUser.role === 'PATRON';
 
   return (
-    <Sidebar className="w-72 rounded-r-4xl">
+    <Sidebar className="w-72 rounded-r-4xl hidden md:flex">
       <SidebarHeader className="p-6">
          <Logo className="h-10 w-auto text-white" />
       </SidebarHeader>
