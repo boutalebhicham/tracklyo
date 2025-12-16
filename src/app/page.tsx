@@ -50,7 +50,7 @@ export default function Home() {
   }, [authUser, isUserLoading, router, loggedInUserData, viewedUserId]);
 
 
-  const viewedUserDocRef = useMemoFirebase(() => viewedUserId ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore]);
+  const viewedUserDocRef = useMemoFirebase(() => viewedUserId && authUser ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore, authUser]);
   const { data: viewedUserData } = useDoc<User>(viewedUserDocRef);
 
   const collaboratorsQuery = useMemoFirebase(() => {
