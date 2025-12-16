@@ -6,79 +6,43 @@
       "type": "object",
       "description": "Represents a user within the Tracklyo application, storing core profile information.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the user entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The user's full name."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address.",
-          "format": "email"
-        },
-        "role": {
-          "type": "string",
-          "description": "The user's role within the application (PATRON or RESPONSABLE)."
-        },
-        "avatar": {
-          "type": "string",
-          "description": "URL of the user's profile picture."
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "The user's phone number for WhatsApp integration."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the user entity." },
+        "name": { "type": "string", "description": "The user's full name." },
+        "email": { "type": "string", "description": "The user's email address.", "format": "email" },
+        "role": { "type": "string", "description": "The user's role within the application (PATRON or RESPONSABLE)." },
+        "avatar": { "type": "string", "description": "URL of the user's profile picture." },
+        "phoneNumber": { "type": "string", "description": "The user's phone number for WhatsApp integration." }
       },
-      "required": [
-        "id",
-        "name",
-        "email",
-        "role"
-      ]
+      "required": ["id", "name", "email", "role"]
+    },
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a project owned by a user.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the project." },
+        "name": { "type": "string", "description": "Name of the project." },
+        "authorId": { "type": "string", "description": "ID of the user who owns the project." },
+        "createdAt": { "type": "string", "description": "Timestamp of when the project was created.", "format": "date-time" }
+      },
+      "required": ["id", "name", "authorId", "createdAt"]
     },
     "Recap": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Recap",
       "type": "object",
-      "description": "Represents an activity recap created by a RESPONSABLE user.",
+      "description": "Represents an activity recap created by a RESPONSABLE user for a specific project.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the recap entity."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the activity recap."
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of recap (DAILY or WEEKLY)."
-        },
-        "description": {
-          "type": "string",
-          "description": "Detailed description of the activity recap."
-        },
-        "date": {
-          "type": "string",
-          "description": "Date of the activity recap.",
-          "format": "date-time"
-        },
-        "authorId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Recap)"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the recap entity." },
+        "projectId": { "type": "string", "description": "Reference to Project." },
+        "title": { "type": "string", "description": "Title of the activity recap." },
+        "type": { "type": "string", "description": "Type of recap (DAILY or WEEKLY)." },
+        "description": { "type": "string", "description": "Detailed description of the activity recap." },
+        "date": { "type": "string", "description": "Date of the activity recap.", "format": "date-time" },
+        "authorId": { "type": "string", "description": "Reference to User." }
       },
-      "required": [
-        "id",
-        "title",
-        "type",
-        "description",
-        "date",
-        "authorId"
-      ]
+      "required": ["id", "projectId", "title", "type", "description", "date", "authorId"]
     },
     "Comment": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -86,158 +50,62 @@
       "type": "object",
       "description": "Represents a comment on a recap.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the comment entity."
-        },
-        "recapId": {
-          "type": "string",
-          "description": "Reference to Recap. (Relationship: Recap 1:N Comment)"
-        },
-        "authorId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Comment)"
-        },
-        "content": {
-          "type": "string",
-          "description": "Content of the comment."
-        },
-        "date": {
-          "type": "string",
-          "description": "Date of the comment.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the comment entity." },
+        "projectId": { "type": "string", "description": "Reference to Project." },
+        "recapId": { "type": "string", "description": "Reference to Recap." },
+        "authorId": { "type": "string", "description": "Reference to User." },
+        "content": { "type": "string", "description": "Content of the comment." },
+        "date": { "type": "string", "description": "Date of the comment.", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "recapId",
-        "authorId",
-        "content",
-        "date"
-      ]
+      "required": ["id", "projectId", "recapId", "authorId", "content", "date"]
     },
     "Event": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Event",
       "type": "object",
-      "description": "Represents a calendar event.",
+      "description": "Represents a calendar event for a specific project.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the event entity."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the calendar event."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the calendar event."
-        },
-        "date": {
-          "type": "string",
-          "description": "Date and time of the calendar event.",
-          "format": "date-time"
-        },
-        "authorId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Event)"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the event entity." },
+        "projectId": { "type": "string", "description": "Reference to Project." },
+        "title": { "type": "string", "description": "Title of the calendar event." },
+        "description": { "type": "string", "description": "Description of the calendar event." },
+        "date": { "type": "string", "description": "Date and time of the calendar event.", "format": "date-time" },
+        "authorId": { "type": "string", "description": "Reference to User." }
       },
-      "required": [
-        "id",
-        "title",
-        "description",
-        "date",
-        "authorId"
-      ]
+      "required": ["id", "projectId", "title", "description", "date", "authorId"]
     },
     "Document": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Document",
       "type": "object",
-      "description": "Represents a document.",
+      "description": "Represents a document for a specific project.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the document entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the document."
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of document."
-        },
-        "date": {
-          "type": "string",
-          "description": "Upload date of the document.",
-          "format": "date-time"
-        },
-        "authorId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Document)"
-        },
-        "size": {
-          "type": "string",
-          "description": "Size of the document."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the document entity." },
+        "projectId": { "type": "string", "description": "Reference to Project." },
+        "name": { "type": "string", "description": "Name of the document." },
+        "type": { "type": "string", "description": "Type of document." },
+        "date": { "type": "string", "description": "Upload date of the document.", "format": "date-time" },
+        "authorId": { "type": "string", "description": "Reference to User." },
+        "size": { "type": "string", "description": "Size of the document." }
       },
-      "required": [
-        "id",
-        "name",
-        "type",
-        "date",
-        "authorId",
-        "size"
-      ]
+      "required": ["id", "projectId", "name", "type", "date", "authorId", "size"]
     },
     "Transaction": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transaction",
       "type": "object",
-      "description": "Represents a financial transaction.",
+      "description": "Represents a financial transaction for a specific project.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the transaction entity."
-        },
-        "amount": {
-          "type": "number",
-          "description": "Amount of the transaction."
-        },
-        "reason": {
-          "type": "string",
-          "description": "Reason for the transaction."
-        },
-        "date": {
-          "type": "string",
-          "description": "Date of the transaction.",
-          "format": "date-time"
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of transaction (BUDGET_ADD or EXPENSE)."
-        },
-        "currency": {
-          "type": "string",
-          "description": "Currency of the transaction (EUR, USD, XOF)."
-        },
-        "authorId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Transaction)"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the transaction entity." },
+        "projectId": { "type": "string", "description": "Reference to Project." },
+        "amount": { "type": "number", "description": "Amount of the transaction." },
+        "reason": { "type": "string", "description": "Reason for the transaction." },
+        "date": { "type": "string", "description": "Date of the transaction.", "format": "date-time" },
+        "type": { "type": "string", "description": "Type of transaction (BUDGET_ADD or EXPENSE)." },
+        "currency": { "type": "string", "description": "Currency of the transaction (EUR, USD, XOF)." },
+        "authorId": { "type": "string", "description": "Reference to User." }
       },
-      "required": [
-        "id",
-        "amount",
-        "reason",
-        "date",
-        "type",
-        "currency",
-        "authorId"
-      ]
+      "required": ["id", "projectId", "amount", "reason", "date", "type", "currency", "authorId"]
     }
   },
   "auth": {
@@ -252,123 +120,58 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles. Authorization is based on the authenticated user's UID matching the {userId}.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "Stores user profiles."
         }
       },
       {
-        "path": "/users/{userId}/recaps/{recapId}",
+        "path": "/users/{userId}/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": { "$ref": "#/backend/entities/Project" },
+          "description": "Stores projects owned by a user."
+        }
+      },
+      {
+        "path": "/users/{userId}/projects/{projectId}/recaps/{recapId}",
         "definition": {
           "entityName": "Recap",
-          "schema": {
-            "$ref": "#/backend/entities/Recap"
-          },
-          "description": "Stores recaps created by a specific user. This path enforces ownership.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user (author)."
-            },
-            {
-              "name": "recapId",
-              "description": "The unique identifier of the recap."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Recap" },
+          "description": "Stores recaps for a specific project."
         }
       },
       {
-        "path": "/users/{userId}/recaps/{recapId}/comments/{commentId}",
+        "path": "/users/{userId}/projects/{projectId}/recaps/{recapId}/comments/{commentId}",
         "definition": {
           "entityName": "Comment",
-          "schema": {
-            "$ref": "#/backend/entities/Comment"
-          },
-          "description": "Stores comments for a specific recap. This continues the path-based ownership.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user (author of the recap)."
-            },
-            {
-              "name": "recapId",
-              "description": "The unique identifier of the recap."
-            },
-            {
-              "name": "commentId",
-              "description": "The unique identifier of the comment."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Comment" },
+          "description": "Stores comments for a specific recap."
         }
       },
       {
-        "path": "/users/{userId}/events/{eventId}",
+        "path": "/users/{userId}/projects/{projectId}/events/{eventId}",
         "definition": {
           "entityName": "Event",
-          "schema": {
-            "$ref": "#/backend/entities/Event"
-          },
-          "description": "Stores events created by a specific user. This path enforces ownership.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user (author)."
-            },
-            {
-              "name": "eventId",
-              "description": "The unique identifier of the event."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Event" },
+          "description": "Stores events for a specific project."
         }
       },
       {
-        "path": "/users/{userId}/documents/{documentId}",
+        "path": "/users/{userId}/projects/{projectId}/documents/{documentId}",
         "definition": {
           "entityName": "Document",
-          "schema": {
-            "$ref": "#/backend/entities/Document"
-          },
-          "description": "Stores documents created by a specific user. This path enforces ownership.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user (author)."
-            },
-            {
-              "name": "documentId",
-              "description": "The unique identifier of the document."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Document" },
+          "description": "Stores documents for a specific project."
         }
       },
       {
-        "path": "/users/{userId}/transactions/{transactionId}",
+        "path": "/users/{userId}/projects/{projectId}/transactions/{transactionId}",
         "definition": {
           "entityName": "Transaction",
-          "schema": {
-            "$ref": "#/backend/entities/Transaction"
-          },
-          "description": "Stores transactions created by a specific user. This path enforces ownership.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user (author)."
-            },
-            {
-              "name": "transactionId",
-              "description": "The unique identifier of the transaction."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Transaction" },
+          "description": "Stores transactions for a specific project."
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to support a multi-user application ('Tracklyo') with 'PATRON' and 'RESPONSABLE' roles. It prioritizes authorization independence, clarity, and scalability.  The structure uses path-based ownership for user-related data and denormalization to avoid hierarchical authorization dependencies.\n\n*   **/users/{userId}:** Stores user profiles. Authorization is based on the authenticated user's `uid` matching the `{userId}`.\n*   **/users/{userId}/recaps/{recapId}:** Stores recaps created by a specific user. This path enforces ownership.\n*   **/users/{userId}/recaps/{recapId}/comments/{commentId}:** Stores comments for a specific recap. This continues the path-based ownership.\n*   **/users/{userId}/events/{eventId}:** Stores events created by a specific user. This path enforces ownership.\n*   **/users/{userId}/documents/{documentId}:** Stores documents created by a specific user. This path enforces ownership.\n*   **/users/{userId}/transactions/{transactionId}:** Stores transactions created by a specific user. This path enforces ownership.\n\n\n**Authorization Independence (CRITICAL):** All entities are structured to avoid `get()` calls in security rules.  Ownership is enforced through path-based rules (e.g., `/users/{userId}/recaps/{recapId}` ensures only the user with ID `{userId}` can access recaps in that path). This removes hierarchical dependencies and enables atomic operations.\n\n**QAPs (Rules are not Filters):**  The structure enables secure `list` operations because each collection's documents share the same security requirements. Path-based ownership guarantees that listing documents under `/users/{userId}/recaps` only returns recaps owned by that user, preventing unauthorized data access. The segregation of user-owned data into separate paths ensures that rules do not act as filters, and users can only access data explicitly associated with their ID.\n\n**DBAC (No Custom Claims):** User roles (PATRON, RESPONSABLE) are stored directly in the `User` document. Security rules use `request.auth.uid` to verify the user's identity and then check the user's role against the value stored in the `User` document to enforce role-based access control.\n\n**Invariants:**  Path-based ownership enforces the integrity of ownership. Timestamps can be enforced using rules that validate the `date` field upon creation. Denormalized data (if necessary in the future) would be handled by rules enforcing consistency between parent and child documents during creation/update operations."
+    ]
   }
 }

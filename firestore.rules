@@ -1,260 +1,46 @@
 
-/**
- * Core Philosophy: This ruleset enforces a strict user-ownership model. All data is scoped
- * to a specific user and stored in subcollections under their user document. A user can only
- * ever read or write data that exists within their own data tree, identified by their unique ID.
- *
- * Data Structure: All application data is nested under the `/users/{userId}` path. For example,
- * a user's recaps are stored at `/users/{userId}/recaps/{recapId}`. This hierarchical structure
- * allows for simple, performant, and highly secure path-based authorization.
- *
- * Key Security Decisions:
- * - User Isolation: Access is strictly limited to the document owner based on the `{userId}` in
- *   the path. There is no concept of public data or cross-user data access.
- * - Limited User Listing: Listing users is only allowed for authenticated users, but not for
- *   unauthenticated users.
- * - Ownership is Final: The `authorId` or `id` field linking a document to its owner is immutable
- *   after creation, preventing documents from being reassigned.
- *
- * Denormalization for Authorization: This ruleset relies on a path-based security model.
- * The user's UID is part of the document path (e.g., `/users/{userId}/...`), which is the most
- * efficient way to secure data, as it requires no extra document reads (`get()` calls) to
- * verify ownership. All child documents (Recap, Event, etc.) contain a denormalized `authorId`
- * to maintain relational integrity, which is validated against the path on creation.
- *
- * Structural Segregation: The entire data model segregates each user's data into their own
- * document tree. This pattern is inherently secure for list operations, as any query against a
- * subcollection path like `/users/{userId}/recaps` is naturally filtered by the rules to only
- * allow access if the requester is the owner (`{userId}`).
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ------------------------------------------------------------------------
-    // Helper Functions
-    // ------------------------------------------------------------------------
-
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the authenticated user's UID matches the provided userId.
-     * This is the primary function for enforcing document ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * For update/delete operations, checks if the document exists AND the user is the owner.
-     * This prevents modifying or deleting non-existent data.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    // --- Data Validation Helper Functions ---
-
-    /**
-     * Validates required ownership fields when a new User document is created.
-     */
-    function hasValidUserDataOnCreate(userId) {
-      let data = request.resource.data;
-      return data.id == userId;
-    }
-
-    /**
-     * Enforces immutability of the user's ID on update.
-     */
-    function hasValidUserDataOnUpdate() {
-      return request.resource.data.id == resource.data.id;
-    }
-
-    /**
-     * Validates required ownership fields when a new Recap document is created.
-     */
-    function hasValidRecapDataOnCreate(userId) {
-      let data = request.resource.data;
-      return data.authorId == userId;
-    }
-
-    /**
-     * Enforces immutability of the recap's author on update.
-     */
-    function hasValidRecapDataOnUpdate() {
-      return request.resource.data.authorId == resource.data.authorId;
-    }
-    
-    /**
-     * Validates required ownership fields when a new Comment document is created.
-     * The author must be the currently authenticated user.
-     */
-    function hasValidCommentDataOnCreate() {
-      let data = request.resource.data;
-      return data.authorId == request.auth.uid;
-    }
-
-    /**
-     * Enforces immutability of the comment's author on update.
-     */
-    function hasValidCommentDataOnUpdate() {
-      return request.resource.data.authorId == resource.data.authorId;
-    }
-
-    /**
-     * Validates required ownership fields when a new Event document is created.
-     */
-    function hasValidEventDataOnCreate(userId) {
-      let data = request.resource.data;
-      return data.authorId == userId;
-    }
-
-    /**
-     * Enforces immutability of the event's author on update.
-     */
-    function hasValidEventDataOnUpdate() {
-      return request.resource.data.authorId == resource.data.authorId;
-    }
-    
-    /**
-     * Validates required ownership fields when a new Document document is created.
-     */
-    function hasValidDocumentDataOnCreate(userId) {
-      let data = request.resource.data;
-      return data.authorId == userId;
-    }
-
-    /**
-     * Enforces immutability of the document's author on update.
-     */
-    function hasValidDocumentDataOnUpdate() {
-      return request.resource.data.authorId == resource.data.authorId;
-    }
-
-    /**
-     * Validates required ownership fields when a new Transaction document is created.
-     */
-    function hasValidTransactionDataOnCreate(userId) {
-      let data = request.resource.data;
-      return data.authorId == userId;
-    }
-
-    /**
-     * Enforces immutability of the transaction's author on update.
-     */
-    function hasValidTransactionDataOnUpdate() {
-      return request.resource.data.authorId == resource.data.authorId;
-    }
-    
-
-    // ------------------------------------------------------------------------
-    // Collection Rules
-    // ------------------------------------------------------------------------
-
-    /**
-     * @description Manages user profile documents.
-     * @path /users/{userId}
-     * @allow (create) An authenticated user can create their own user profile document. `auth.uid: 'user_abc'`, `path: /users/user_abc`
-     * @allow (get) An authenticated user can read their own profile. `auth.uid: 'user_abc'`, `path: /users/user_abc`
-     * @allow (list) Any authenticated user can list all user documents in the collection. `auth.uid: 'user_abc'`, `path: /users`
-     * @deny (update) A user cannot update another user's profile. `auth.uid: 'user_abc'`, `path: /users/user_xyz`
-     * @principle Restricts access to a user's own data tree and allows self-creation of a profile.
-     */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get, update, delete: if isOwner(userId);
+      allow create: if isSignedIn() && request.resource.data.id == userId;
       allow list: if isSignedIn();
-      allow create: if isOwner(userId) && hasValidUserDataOnCreate(userId);
-      allow update: if isExistingOwner(userId) && hasValidUserDataOnUpdate();
-      allow delete: if isExistingOwner(userId);
 
-      /**
-       * @description Manages activity recaps owned by a user.
-       * @path /users/{userId}/recaps/{recapId}
-       * @allow (create) The owner of the path can create a recap. `auth.uid: 'user_abc'`, `path: /users/user_abc/recaps/recap_123`
-       * @allow (list) The owner can list all their own recaps. `auth.uid: 'user_abc'`, `path: /users/user_abc/recaps`
-       * @deny (get) A user cannot read recaps belonging to another user. `auth.uid: 'user_xyz'`, `path: /users/user_abc/recaps/recap_123`
-       * @deny (delete) A user cannot delete recaps belonging to another user. `auth.uid: 'user_xyz'`, `path: /users/user_abc/recaps/recap_123`
-       * @principle Enforces strict ownership for all operations based on the document path.
-       */
-      match /recaps/{recapId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && hasValidRecapDataOnCreate(userId);
-        allow update: if isExistingOwner(userId) && hasValidRecapDataOnUpdate();
-        allow delete: if isExistingOwner(userId);
+      // Projects are owned by the user.
+      match /projects/{projectId} {
+        allow read, create, update, delete: if isOwner(userId) && request.resource.data.authorId == userId;
 
-        /**
-         * @description Manages comments on a user's recap.
-         * @path /users/{userId}/recaps/{recapId}/comments/{commentId}
-         * @allow (create) The recap owner can create a comment on their own recap. `auth.uid: 'user_abc'`, `path: /users/user_abc/recaps/recap_123/comments/comment_456`
-         * @allow (delete) The recap owner can delete any comment on their recap. `auth.uid: 'user_abc'`, `path: /users/user_abc/recaps/recap_123/comments/comment_456`
-         * @deny (get) A different user cannot read comments on another's recap. `auth.uid: 'user_xyz'`, `path: /users/user_abc/recaps/recap_123/comments/comment_456`
-         * @deny (create) A different user cannot comment on another's recap. `auth.uid: 'user_xyz'`, `path: /users/user_abc/recaps/recap_123/comments/comment_456`
-         * @principle Access is controlled by the top-level owner of the data tree (`userId`).
-         */
-        match /comments/{commentId} {
-          allow get: if isOwner(userId);
-          allow list: if isOwner(userId);
-          allow create: if isOwner(userId) && hasValidCommentDataOnCreate();
-          allow update: if isExistingOwner(userId) && hasValidCommentDataOnUpdate();
-          allow delete: if isExistingOwner(userId);
+        // All project-specific data is nested under the project.
+        // Access is granted if the user owns the parent project.
+        match /recaps/{recapId} {
+          allow read, write: if isOwner(userId);
+          
+          match /comments/{commentId} {
+            allow read, write: if isOwner(userId);
+          }
         }
-      }
-
-      /**
-       * @description Manages calendar events owned by a user.
-       * @path /users/{userId}/events/{eventId}
-       * @allow (create) The owner of the path can create an event. `auth.uid: 'user_abc'`, `path: /users/user_abc/events/event_123`
-       * @allow (list) The owner can list all their own events. `auth.uid: 'user_abc'`, `path: /users/user_abc/events`
-       * @deny (get) A user cannot read events belonging to another user. `auth.uid: 'user_xyz'`, `path: /users/user_abc/events/event_123`
-       * @deny (delete) A user cannot delete events belonging to another user. `auth.uid: 'user_xyz'`, `path: /users/user_abc/events/event_123`
-       * @principle Enforces strict ownership for all operations based on the document path.
-       */
-      match /events/{eventId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && hasValidEventDataOnCreate(userId);
-        allow update: if isExistingOwner(userId) && hasValidEventDataOnUpdate();
-        allow delete: if isExistingOwner(userId);
-      }
-
-      /**
-       * @description Manages documents uploaded by a user.
-       * @path /users/{userId}/documents/{documentId}
-       * @allow (create) The owner of the path can create a document record. `auth.uid: 'user_abc'`, `path: /users/user_abc/documents/doc_123`
-       * @allow (list) The owner can list all their own documents. `auth.uid: 'user_abc'`, `path: /users/user_abc/documents`
-       * @deny (get) A user cannot read documents belonging to another user. `auth.uid: 'user_xyz'`, `path: /users/user_abc/documents/doc_123`
-       * @deny (delete) A user cannot delete documents belonging to another user. `auth.uid: 'user_xyz'`, `path: /users/user_abc/documents/doc_123`
-       * @principle Enforces strict ownership for all operations based on the document path.
-       */
-      match /documents/{documentId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && hasValidDocumentDataOnCreate(userId);
-        allow update: if isExistingOwner(userId) && hasValidDocumentDataOnUpdate();
-        allow delete: if isExistingOwner(userId);
-      }
-
-      /**
-       * @description Manages financial transactions created by a user.
-       * @path /users/{userId}/transactions/{transactionId}
-       * @allow (create) The owner of the path can create a transaction. `auth.uid: 'user_abc'`, `path: /users/user_abc/transactions/tx_123`
-       * @allow (list) The owner can list all their own transactions. `auth.uid: 'user_abc'`, `path: /users/user_abc/transactions`
-       * @deny (get) A user cannot read transactions belonging to another user. `auth.uid: 'user_xyz'`, `path: /users/user_abc/transactions/tx_123`
-       * @deny (delete) A user cannot delete transactions belonging to another user. `auth.uid: 'user_xyz'`, `path: /users/user_abc/transactions/tx_123`
-       * @principle Enforces strict ownership for all operations based on the document path.
-       */
-      match /transactions/{transactionId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && hasValidTransactionDataOnCreate(userId);
-        allow update: if isExistingOwner(userId) && hasValidTransactionDataOnUpdate();
-        allow delete: if isExistingOwner(userId);
+        
+        match /events/{eventId} {
+          allow read, write: if isOwner(userId);
+        }
+        
+        match /documents/{documentId} {
+          allow read, write: if isOwner(userId);
+        }
+        
+        match /transactions/{transactionId} {
+          allow read, write: if isOwner(userId);
+        }
       }
     }
   }

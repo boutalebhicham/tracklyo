@@ -93,7 +93,7 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
 };
 
 
-export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, viewAs, transactions }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id' | 'authorId' | 'date'>) => void, authorId: string, viewAs: string, transactions: Transaction[] }) => {
+export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, projectId, viewAs, transactions }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id' | 'authorId' | 'date' | 'projectId'>) => void, authorId: string, projectId: string, viewAs: string, transactions: Transaction[] }) => {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [currency, setCurrency] = useState<Currency>('EUR');
@@ -104,7 +104,7 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
 
   const handleSubmit = () => {
     const numericAmount = parseFloat(amount);
-    if (!numericAmount || !reason) {
+    if (!numericAmount || !reason || !projectId) {
       setError('Veuillez remplir tous les champs.');
       return;
     }
@@ -168,7 +168,7 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
 };
 
 
-export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalProps & { onAddRecap: (recap: Omit<Recap, 'id'>) => void, authorId: string }) => {
+export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId, projectId }: ModalProps & { onAddRecap: (recap: Omit<Recap, 'id'>) => void, authorId: string, projectId: string }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [type, setType] = useState<RecapType>('DAILY');
@@ -182,8 +182,8 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
     };
 
     const handleSubmit = () => {
-        if(description) { // Title is now optional
-            const recapData: Omit<Recap, 'id'> = { authorId, title: title || 'Rapport du jour', description, type, date: new Date().toISOString() };
+        if(description && projectId) {
+            const recapData: Omit<Recap, 'id'> = { authorId, projectId, title: title || 'Rapport du jour', description, type, date: new Date().toISOString() };
             if (mediaFile) {
               recapData.mediaUrl = URL.createObjectURL(mediaFile);
               recapData.mediaType = mediaFile.type.startsWith('image/') ? 'image' : 'video';
@@ -249,14 +249,14 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
     )
 }
 
-export const AddEventModal = ({ isOpen, onClose, onAddEvent, authorId }: ModalProps & { onAddEvent: (event: Omit<CalendarEvent, 'id'>) => void, authorId: string }) => {
+export const AddEventModal = ({ isOpen, onClose, onAddEvent, authorId, projectId }: ModalProps & { onAddEvent: (event: Omit<CalendarEvent, 'id'>) => void, authorId: string, projectId: string }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState('');
 
     const handleSubmit = () => {
-        if(title && date) {
-            onAddEvent({ authorId, title, description, date: new Date(date).toISOString() });
+        if(title && date && projectId) {
+            onAddEvent({ authorId, projectId, title, description, date: new Date(date).toISOString() });
             setTitle(''); setDescription(''); setDate('');
         }
     }
@@ -276,7 +276,7 @@ export const AddEventModal = ({ isOpen, onClose, onAddEvent, authorId }: ModalPr
     )
 }
 
-export const AddDocumentModal = ({ isOpen, onClose, onAddDocument, authorId }: ModalProps & { onAddDocument: (doc: Omit<DocumentFile, 'id'>) => void, authorId: string }) => {
+export const AddDocumentModal = ({ isOpen, onClose, onAddDocument, authorId, projectId }: ModalProps & { onAddDocument: (doc: Omit<DocumentFile, 'id'>) => void, authorId: string, projectId: string }) => {
     const [file, setFile] = useState<File | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -287,9 +287,10 @@ export const AddDocumentModal = ({ isOpen, onClose, onAddDocument, authorId }: M
     };
 
     const handleSubmit = () => {
-        if(file) {
+        if(file && projectId) {
             onAddDocument({ 
-                authorId, 
+                authorId,
+                projectId, 
                 name: file.name, 
                 type: file.type || 'inconnu', 
                 size: `${(file.size / (1024*1024)).toFixed(2)} MB`,

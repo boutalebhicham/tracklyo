@@ -1,15 +1,16 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, query, where, doc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
-import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile } from '@/lib/definitions';
+import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile, Project } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
+import ProjectTabs from '@/components/app/project-tabs';
 import DashboardView from '@/components/app/dashboard-view';
 import FinancesView from '@/components/app/finances-view';
 import ActivityView from '@/components/app/activity-view';
@@ -28,6 +29,10 @@ export default function Home() {
   const router = useRouter();
   const firestore = useFirestore();
 
+  const [activeView, setActiveView] = useState('accueil');
+  const [modal, setModal] = useState<string | null>(null);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
@@ -37,15 +42,55 @@ export default function Home() {
   const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [user, firestore]);
   const { data: currentUserData } = useDoc<User>(userDocRef);
 
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'users', user.uid, 'projects'));
+  }, [firestore, user]);
+  const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+
+  // Set active project
+  useEffect(() => {
+    if (!projectsLoading && projects) {
+      if (projects.length > 0 && !activeProjectId) {
+        setActiveProjectId(projects[0].id);
+      } else if (projects.length === 0 && user) {
+        // Create a default project if none exist
+        const newProject = {
+          name: 'Projet 1',
+          authorId: user.uid,
+          createdAt: new Date().toISOString(),
+        };
+        const projectsRef = collection(firestore, 'users', user.uid, 'projects');
+        addDocumentNonBlocking(projectsRef, newProject).then(docRef => {
+            if(docRef) {
+                setActiveProjectId(docRef.id);
+            }
+        })
+      }
+    }
+  }, [projects, projectsLoading, activeProjectId, user, firestore]);
+
+  const handleAddProject = () => {
+    if (!user || !projects) return;
+    const newProjectName = `Projet ${projects.length + 1}`;
+    const newProject = {
+      name: newProjectName,
+      authorId: user.uid,
+      createdAt: new Date().toISOString(),
+    };
+    const projectsRef = collection(firestore, 'users', user.uid, 'projects');
+    addDocumentNonBlocking(projectsRef, newProject).then(docRef => {
+      if(docRef) {
+        setActiveProjectId(docRef.id);
+      }
+    });
+  };
+
   const responsablesQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, 'users'), where('role', '==', 'RESPONSABLE'));
   }, [firestore, user]);
   const { data: responsables } = useCollection<User>(responsablesQuery);
-
-  const [activeView, setActiveView] = useState('accueil');
-  const [modal, setModal] = useState<string | null>(null);
-
   
   const handleLogout = () => {
     if (auth) {
@@ -54,74 +99,72 @@ export default function Home() {
   };
 
   const handleAddCollaborator = () => {
-    if (responsables && responsables.length >= 2) { 
+    if (responsables && responsables.length >= 1) { 
       setModal('paywall');
     } else {
       setModal('addUser');
     }
   };
 
-  const activeUser = currentUserData;
-  const authorId = activeUser?.id;
+  const authorId = currentUserData?.id;
 
-  const transactionsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'transactions')) : null, [firestore, authorId]);
+  const transactionsQuery = useMemoFirebase(() => authorId && activeProjectId ? query(collection(firestore, 'users', authorId, 'projects', activeProjectId, 'transactions')) : null, [firestore, authorId, activeProjectId]);
   const { data: transactions } = useCollection<Transaction>(transactionsQuery);
   
-  const recapsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'recaps')) : null, [firestore, authorId]);
+  const recapsQuery = useMemoFirebase(() => authorId && activeProjectId ? query(collection(firestore, 'users', authorId, 'projects', activeProjectId, 'recaps')) : null, [firestore, authorId, activeProjectId]);
   const { data: recaps } = useCollection<Recap>(recapsQuery);
 
-  const eventsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'events')) : null, [firestore, authorId]);
+  const eventsQuery = useMemoFirebase(() => authorId && activeProjectId ? query(collection(firestore, 'users', authorId, 'projects', activeProjectId, 'events')) : null, [firestore, authorId, activeProjectId]);
   const { data: events } = useCollection<CalendarEvent>(eventsQuery);
 
-  const documentsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'documents')) : null, [firestore, authorId]);
+  const documentsQuery = useMemoFirebase(() => authorId && activeProjectId ? query(collection(firestore, 'users', authorId, 'projects', activeProjectId, 'documents')) : null, [firestore, authorId, activeProjectId]);
   const { data: documents } = useCollection<DocumentFile>(documentsQuery);
   
+  // This needs to be more specific, fetching comments for a recap within a project
   const commentsQuery = useMemoFirebase(() => {
-    if (!authorId || !recaps?.length) return null;
-    // This is a simplification. In a real app, you'd likely fetch comments for a specific recap.
+    if (!authorId || !activeProjectId || !recaps?.length) return null;
     const recapIds = recaps.map(r => r.id);
-    // Let's assume we are fetching for the latest recap for now.
     if (recapIds.length === 0) return null;
-    return query(collection(firestore, `users/${authorId}/recaps/${recapIds[0]}/comments`));
-  }, [firestore, authorId, recaps]);
+    return query(collection(firestore, `users/${authorId}/projects/${activeProjectId}/recaps/${recapIds[0]}/comments`));
+  }, [firestore, authorId, activeProjectId, recaps]);
   const { data: comments } = useCollection<Comment>(commentsQuery);
 
-  const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>) => {
-    if (!authorId) return;
-    const ref = collection(firestore, 'users', authorId, 'transactions');
+  const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date' | 'projectId'>) => {
+    if (!authorId || !activeProjectId) return;
+    const ref = collection(firestore, 'users', authorId, 'projects', activeProjectId, 'transactions');
     addDocumentNonBlocking(ref, {
       ...newTransaction,
       authorId,
+      projectId: activeProjectId,
       date: new Date().toISOString(),
     });
     setModal(null);
   };
   
-  const handleAddRecap = (newRecap: Omit<Recap, 'id' | 'authorId' | 'date'>) => {
-    if (!authorId) return;
-    const ref = collection(firestore, 'users', authorId, 'recaps');
+  const handleAddRecap = (newRecap: Omit<Recap, 'id' | 'authorId' | 'date' | 'projectId'>) => {
+    if (!authorId || !activeProjectId) return;
+    const ref = collection(firestore, 'users', authorId, 'projects', activeProjectId, 'recaps');
     addDocumentNonBlocking(ref, { 
         ...newRecap,
         authorId,
+        projectId: activeProjectId,
         date: new Date().toISOString()
      });
     setModal(null);
   };
   
-  const handleAddEvent = (newEvent: Omit<CalendarEvent, 'id' | 'authorId'>) => {
-    if (!authorId) return;
-    const ref = collection(firestore, 'users', authorId, 'events');
+  const handleAddEvent = (newEvent: Omit<CalendarEvent, 'id' | 'authorId' | 'projectId'>) => {
+    if (!authorId || !activeProjectId) return;
+    const ref = collection(firestore, 'users', authorId, 'projects', activeProjectId, 'events');
     addDocumentNonBlocking(ref, { 
         ...newEvent,
+        projectId: activeProjectId,
         authorId
      });
     setModal(null);
   };
   
   const handleAddUser = (newUser: Omit<User, 'id' | 'email' >) => {
-    // This is a simplified version. In a real app, you'd create a new Firebase user
-    // and then create their user document in Firestore.
-    // For now, we'll just add to the collection.
     const ref = collection(firestore, 'users');
     const fullUser = {
       ...newUser,
@@ -133,12 +176,13 @@ export default function Home() {
     setModal(null);
   }
 
-  const handleAddDocument = (newDocument: Omit<DocumentFile, 'id' | 'authorId' | 'date'>) => {
-    if (!authorId) return;
-    const ref = collection(firestore, 'users', authorId, 'documents');
+  const handleAddDocument = (newDocument: Omit<DocumentFile, 'id' | 'authorId' | 'date' | 'projectId'>) => {
+    if (!authorId || !activeProjectId) return;
+    const ref = collection(firestore, 'users', authorId, 'projects', activeProjectId, 'documents');
     addDocumentNonBlocking(ref, { 
         ...newDocument,
         authorId,
+        projectId: activeProjectId,
         date: new Date().toISOString()
      });
     setModal(null);
@@ -146,10 +190,10 @@ export default function Home() {
 
   const whatsAppTarget = currentUserData;
   
-  if (isUserLoading || !user || !currentUserData ) {
+  if (isUserLoading || !user || !currentUserData || projectsLoading || !activeProjectId ) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
-            <p>Chargement...</p>
+            <p>Chargement de votre espace de travail...</p>
         </div>
     );
   }
@@ -159,7 +203,7 @@ export default function Home() {
       case 'accueil':
         return (
           <DashboardView
-            user={activeUser!}
+            user={currentUserData!}
             transactions={transactions || []}
             recaps={recaps || []}
             events={events || []}
@@ -184,6 +228,7 @@ export default function Home() {
             onAddRecap={() => setModal('addRecap')}
             currentUser={currentUserData}
             authorId={authorId!}
+            projectId={activeProjectId!}
           />
         );
       case 'agenda':
@@ -201,7 +246,7 @@ export default function Home() {
           />
         );
       default:
-        return <DashboardView user={activeUser!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
+        return <DashboardView user={currentUserData!} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
     }
   }
 
@@ -213,10 +258,17 @@ export default function Home() {
           activeView={activeView}
           setActiveView={setActiveView}
           onLogout={handleLogout}
+          onAddCollaborator={handleAddCollaborator}
         />
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 sm:p-6 lg:p-8">
-            <AppHeader user={activeUser} />
+            <AppHeader user={currentUserData} />
+            <ProjectTabs 
+              projects={projects || []}
+              activeProjectId={activeProjectId}
+              setActiveProjectId={setActiveProjectId}
+              onAddProject={handleAddProject}
+            />
             <div className="mt-6">
               {renderContent()}
             </div>
@@ -233,6 +285,7 @@ export default function Home() {
         onClose={() => setModal(null)} 
         onAddTransaction={handleAddTransaction} 
         authorId={authorId!}
+        projectId={activeProjectId!}
         viewAs={currentUserData.role}
         transactions={transactions || []}
       />
@@ -241,18 +294,21 @@ export default function Home() {
         onClose={() => setModal(null)} 
         onAddRecap={handleAddRecap}
         authorId={authorId!}
+        projectId={activeProjectId!}
       />
       <AddEventModal
         isOpen={modal === 'addEvent'}
         onClose={() => setModal(null)}
         onAddEvent={handleAddEvent}
         authorId={authorId!}
+        projectId={activeProjectId!}
       />
       <AddDocumentModal
         isOpen={modal === 'addDocument'}
         onClose={() => setModal(null)}
         onAddDocument={handleAddDocument}
         authorId={authorId!}
+        projectId={activeProjectId!}
       />
     </SidebarProvider>
   );

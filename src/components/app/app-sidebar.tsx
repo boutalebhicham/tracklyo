@@ -13,8 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import type { User } from '@/lib/definitions'
-import { LayoutGrid, Wand, Activity, Calendar, Folder, Landmark, LogOut, User as UserIcon } from 'lucide-react'
-import { Badge } from '../ui/badge'
+import { LayoutGrid, Activity, Calendar, Folder, Landmark, LogOut, UserPlus } from 'lucide-react'
 import Logo from './logo'
 
 type AppSidebarProps = {
@@ -22,6 +21,7 @@ type AppSidebarProps = {
   activeView: string
   setActiveView: (view: string) => void
   onLogout: () => void;
+  onAddCollaborator: () => void;
 }
 
 const menuItems = [
@@ -36,7 +36,8 @@ const AppSidebar = ({
   currentUser,
   activeView,
   setActiveView,
-  onLogout
+  onLogout,
+  onAddCollaborator
 }: AppSidebarProps) => {
 
   const handleViewChange = (viewId: string) => {
@@ -79,7 +80,6 @@ const AppSidebar = ({
                 >
                   <item.icon size={20} />
                   <span>{item.label}</span>
-                   {item.id === 'ia' && <Badge className="ml-auto bg-primary/20 text-primary border-primary/30">Nouveau</Badge>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
@@ -87,6 +87,10 @@ const AppSidebar = ({
         </div>
 
         <SidebarFooter className="mt-auto p-2 space-y-2">
+           <Button onClick={onAddCollaborator} variant="ghost" className="w-full justify-start h-12 text-base font-normal rounded-xl hover:bg-black/20">
+                <UserPlus size={20} className="mr-3" />
+                Collaborateurs
+            </Button>
            <Button onClick={onLogout} variant="ghost" className="w-full justify-start h-12 text-base font-normal rounded-xl hover:bg-black/20">
                 <LogOut size={20} className="mr-3" />
                 Déconnexion
