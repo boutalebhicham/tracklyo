@@ -60,7 +60,7 @@ const AppSidebar = ({
       </SidebarHeader>
       
       <SidebarContent className="flex flex-col justify-between p-4">
-        <div className="space-y-4">
+        <div className="space-y-6">
           
           {isPatron ? (
             <CollaboratorSwitcher 
