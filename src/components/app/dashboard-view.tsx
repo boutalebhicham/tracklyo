@@ -35,7 +35,6 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActi
                 <div className="p-2 bg-yellow-400/20 rounded-lg">
                   <Wand size={20} className="text-yellow-400" />
                 </div>
-                <Badge variant="outline" className="border-green-500/50 bg-green-500/10 text-green-300">+12% cette semaine</Badge>
               </div>
             </div>
           </CardHeader>
