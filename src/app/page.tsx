@@ -7,7 +7,7 @@ import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
-import type { User, AddUserForm, Transaction, Recap, Event, DocumentFile } from '@/lib/definitions';
+import type { User, AddUserForm, Transaction, Recap, Event, Document as DocumentFile } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
 import DashboardView from '@/components/app/dashboard-view';
@@ -52,18 +52,18 @@ export default function Home() {
 
   // Data for the logged-in user (manager)
   const loggedInUserDocRef = useMemoFirebase(() => authUser?.uid ? doc(firestore, 'users', authUser.uid) : null, [authUser, firestore]);
-  const { data: loggedInUserData } = useDoc<User>(loggedInUserDocRef);
+  const { data: loggedInUserData, isLoading: isPatronLoading } = useDoc<User>(loggedInUserDocRef);
 
   // Data for the currently viewed user (can be manager or collaborator)
   const viewedUserDocRef = useMemoFirebase(() => viewedUserId ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore]);
-  const { data: viewedUserData } = useDoc<User>(viewedUserDocRef);
+  const { data: viewedUserData, isLoading: isViewedUserLoading } = useDoc<User>(viewedUserDocRef);
 
   // Get collaborators only if the logged-in user is a PATRON
   const collaboratorsQuery = useMemoFirebase(() => {
     if (!authUser?.uid || !loggedInUserData || loggedInUserData.role !== 'PATRON') return null;
     return query(collection(firestore, 'users'), where('managerId', '==', authUser.uid));
   }, [firestore, authUser, loggedInUserData]);
-  const { data: collaborators } = useCollection<User>(collaboratorsQuery);
+  const { data: collaborators, isLoading: areCollaboratorsLoading } = useCollection<User>(collaboratorsQuery);
 
   const handleLogout = () => {
     signOut(auth);
@@ -162,7 +162,7 @@ export default function Home() {
     return userList;
   }, [loggedInUserData, collaborators]);
 
-  if (isUserLoading || !authUser) {
+  if (isUserLoading) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement de votre espace de travail...</p>
@@ -198,9 +198,11 @@ export default function Home() {
   return (
     <SidebarProvider>
       <div className="flex w-full min-h-screen bg-gray-100 dark:bg-neutral-900">
-        {loggedInUserData ? (
+        {isPatronLoading ? (
+           <div className="hidden md:flex w-72"><Skeleton className="h-full w-full" /></div>
+        ) : (
           <AppSidebar
-            loggedInUser={loggedInUserData}
+            loggedInUser={loggedInUserData!}
             collaborators={collaborators || []}
             activeView={activeView}
             setActiveView={setActiveView}
@@ -209,13 +211,11 @@ export default function Home() {
             viewedUserId={viewedUserId}
             setViewedUserId={setViewedUserId}
           />
-        ) : (
-          <div className="hidden md:flex w-72"><Skeleton className="h-full w-full" /></div>
         )}
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
-           {isMobile && loggedInUserData && (
+           {isMobile && (
             <AppMobileHeader 
-              loggedInUser={loggedInUserData}
+              loggedInUser={loggedInUserData!}
               collaborators={collaborators || []}
               viewedUserId={viewedUserId}
               setViewedUserId={setViewedUserId}
@@ -224,7 +224,7 @@ export default function Home() {
             />
           )}
           <div className="p-4 sm:p-6 lg:p-8">
-            <AppHeader user={viewedUserData} />
+            <AppHeader user={isViewedUserLoading ? undefined : viewedUserData} />
             <div className="mt-6">
               {renderContent()}
             </div>

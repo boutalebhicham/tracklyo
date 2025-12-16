@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import React, { useMemo } from 'react'
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Plus, MessageSquare, Send, Camera } from 'lucide-react'
+import { Camera, Send } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
@@ -32,16 +31,21 @@ const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: Activity
   const recapsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'recaps'), orderBy('date', 'desc')) : null, [firestore, viewedUserId]);
   const { data: recaps, isLoading: areRecapsLoading } = useCollection<Recap>(recapsQuery);
 
-  const recapIds = useMemo(() => recaps?.map(r => r.id) || [], [recaps]);
+  const commentsQueries = useMemo(() => {
+    if (!viewedUserId || !recaps) return {};
+    return recaps.reduce((acc, recap) => {
+        acc[recap.id] = query(collection(firestore, 'users', viewedUserId, 'recaps', recap.id, 'comments'), orderBy('date', 'asc'));
+        return acc;
+    }, {} as Record<string, any>);
+}, [firestore, viewedUserId, recaps]);
 
-  const commentsQuery = useMemoFirebase(() => {
-    if (!viewedUserId || recapIds.length === 0) return null;
-    return query(collection(firestore, `users/${viewedUserId}/recaps`), orderBy('date', 'desc'));
-  }, [firestore, viewedUserId, recapIds]);
-  // This is a simplified comments query. For a real app you might paginate or fetch comments per recap.
-  const { data: allComments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+const commentsData = Object.keys(commentsQueries).reduce((acc, recapId) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { data, isLoading } = useCollection<Comment>(commentsQueries[recapId]);
+    acc[recapId] = { data, isLoading };
+    return acc;
+}, {} as Record<string, { data: Comment[] | null, isLoading: boolean }>);
 
-  const isLoading = areRecapsLoading || areCommentsLoading;
 
   const getUser = (id: string) => users.find(u => u.id === id);
 
@@ -58,20 +62,7 @@ const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: Activity
     });
   };
 
-  const commentsByRecapId = useMemo(() => {
-    if (!allComments) return {};
-    return allComments.reduce((acc, comment) => {
-      const { recapId } = comment;
-      if (!acc[recapId]) {
-        acc[recapId] = [];
-      }
-      acc[recapId].push(comment);
-      return acc;
-    }, {} as Record<string, Comment[]>);
-  }, [allComments]);
-
-
-  if (isLoading) {
+  if (areRecapsLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -126,7 +117,7 @@ const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: Activity
           </div>
         ) : (
             recaps && recaps.map(recap => {
-                const recapComments = commentsByRecapId[recap.id] || [];
+                const { data: recapComments, isLoading: areCommentsLoading } = commentsData[recap.id] || { data: [], isLoading: true };
                 const author = getUser(recap.authorId);
                 return (
                     <Card key={recap.id} className="rounded-4xl flex flex-col bg-card overflow-hidden w-full">
@@ -159,8 +150,8 @@ const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: Activity
                         )}
                     </CardContent>
                     <CardFooter className="flex flex-col items-start gap-4 p-4 pt-0">
-                        <div className="w-full space-y-3">
-                            {recapComments.map(comment => {
+                       {areCommentsLoading ? <Skeleton className="h-10 w-full" /> : <div className="w-full space-y-3">
+                            {recapComments?.map(comment => {
                             const commentAuthor = getUser(comment.authorId);
                             return (
                                 <div key={comment.id} className="flex items-start gap-3">
@@ -175,7 +166,7 @@ const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: Activity
                                 </div>
                             )
                             })}
-                        </div>
+                        </div>}
                         {currentUser && <div className="w-full flex items-center gap-2 pt-4 border-t">
                             <Avatar className="w-8 h-8">
                                 <AvatarImage src={currentUser?.avatar}/>

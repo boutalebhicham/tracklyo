@@ -44,7 +44,9 @@
         "type": { "type": "string", "enum": ["DAILY", "WEEKLY"], "description": "Type of recap." },
         "description": { "type": "string", "description": "Detailed description of the activity recap." },
         "date": { "type": "string", "description": "Date of the activity recap.", "format": "date-time" },
-        "authorId": { "type": "string", "description": "Reference to User." }
+        "authorId": { "type": "string", "description": "Reference to User." },
+        "mediaUrl": { "type": "string", "description": "URL of the media attached to the recap." },
+        "mediaType": { "type": "string", "enum": ["image", "video"], "description": "Type of the media attached." }
       },
       "required": ["id", "title", "type", "description", "date", "authorId"]
     },
@@ -90,21 +92,6 @@
         "size": { "type": "string", "description": "Size of the document." }
       },
       "required": ["id", "name", "type", "date", "authorId", "size"]
-    },
-    "Todo": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Todo",
-      "type": "object",
-      "description": "Represents a to-do item for a user.",
-      "properties": {
-        "id": { "type": "string" },
-        "task": { "type": "string", "description": "The content of the to-do item." },
-        "status": { "type": "string", "enum": ["pending", "completed"], "description": "The status of the to-do item." },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "authorId": { "type": "string", "description": "Reference to User who this task is for." },
-        "createdBy": { "type": "string", "description": "Reference to User who created the task." }
-      },
-      "required": ["id", "task", "status", "createdAt", "authorId", "createdBy"]
     }
   },
   "auth": {
@@ -160,14 +147,6 @@
           "entityName": "Document",
           "schema": { "$ref": "#/backend/entities/Document" },
           "description": "Stores documents for a specific user."
-        }
-      },
-      {
-        "path": "/users/{userId}/todos/{todoId}",
-        "definition": {
-          "entityName": "Todo",
-          "schema": { "$ref": "#/backend/entities/Todo" },
-          "description": "Stores to-do items for a specific user."
         }
       }
     ]

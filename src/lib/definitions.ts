@@ -19,14 +19,6 @@ export type AddUserForm = Omit<User, 'id' | 'role' | 'avatar' | 'managerId' | 'p
   password?: string;
 };
 
-export interface Project {
-  id: string;
-  authorId: string;
-  name: string;
-  description: string;
-  createdAt: string;
-}
-
 export interface Transaction {
   id: string;
   authorId: string;
@@ -64,7 +56,7 @@ export interface Event {
   date: string; // ISO string for datetime
 }
 
-export interface Document {
+export interface DocumentFile {
   id: string;
   authorId: string;
   name: string;
