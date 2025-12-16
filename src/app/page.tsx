@@ -48,16 +48,16 @@ export default function Home() {
     if (authUser && !viewedUserId) {
         setViewedUserId(authUser.uid);
     }
-  }, [authUser, isUserLoading, router, viewedUserId]);
+  }, [authUser, isUserLoading, router]);
 
 
   const viewedUserDocRef = useMemoFirebase(() => viewedUserId && authUser ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore, authUser]);
   const { data: viewedUserData } = useDoc<User>(viewedUserDocRef);
 
   const collaboratorsQuery = useMemoFirebase(() => {
-    if (!authUser || loggedInUserData?.role !== 'PATRON') return null;
+    if (!authUser || !loggedInUserData || loggedInUserData.role !== 'PATRON') return null;
     return query(collection(firestore, 'users'), where('managerId', '==', authUser.uid));
-  }, [firestore, authUser, loggedInUserData?.role]);
+  }, [firestore, authUser, loggedInUserData]);
   const { data: collaborators } = useCollection<User>(collaboratorsQuery);
 
   const handleLogout = () => {
