@@ -42,7 +42,7 @@ export default function Home() {
     if (authUser && !viewedUserId) {
       setViewedUserId(authUser.uid);
     }
-  }, [authUser]);
+  }, [authUser, viewedUserId]);
 
   useEffect(() => {
     if (!isUserLoading && !authUser) {
@@ -78,7 +78,7 @@ export default function Home() {
     }
   };
   
-  const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>, currentTransactions: Transaction[]) => {
+  const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>) => {
     if (!viewedUserId) return;
     const ref = collection(firestore, 'users', viewedUserId, 'transactions');
     addDocumentNonBlocking(ref, {
@@ -162,7 +162,7 @@ export default function Home() {
     return userList;
   }, [loggedInUserData, collaborators]);
 
-  if (isUserLoading || !authUser || !viewedUserId) {
+  if (isUserLoading) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement de votre espace de travail...</p>
@@ -171,6 +171,14 @@ export default function Home() {
   }
 
   const renderContent = () => {
+    if (!viewedUserId) {
+        return (
+             <div className="flex items-center justify-center h-96">
+                <p>Sélectionnez un utilisateur pour voir les détails.</p>
+            </div>
+        )
+    }
+
     switch(activeView) {
       case 'accueil':
         return <DashboardView viewedUserId={viewedUserId} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
