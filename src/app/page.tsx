@@ -162,7 +162,7 @@ export default function Home() {
     return userList;
   }, [loggedInUserData, collaborators]);
 
-  if (isUserLoading) {
+  if (isUserLoading || !authUser) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement de votre espace de travail...</p>
@@ -198,11 +198,11 @@ export default function Home() {
   return (
     <SidebarProvider>
       <div className="flex w-full min-h-screen bg-gray-100 dark:bg-neutral-900">
-        {isPatronLoading ? (
-           <div className="hidden md:flex w-72"><Skeleton className="h-full w-full" /></div>
+        {isPatronLoading || !loggedInUserData ? (
+           <div className="hidden md:flex w-72"><Skeleton className="h-full w-full rounded-r-4xl" /></div>
         ) : (
           <AppSidebar
-            loggedInUser={loggedInUserData!}
+            loggedInUser={loggedInUserData}
             collaborators={collaborators || []}
             activeView={activeView}
             setActiveView={setActiveView}
@@ -213,9 +213,9 @@ export default function Home() {
           />
         )}
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
-           {isMobile && (
+           {isMobile && loggedInUserData && (
             <AppMobileHeader 
-              loggedInUser={loggedInUserData!}
+              loggedInUser={loggedInUserData}
               collaborators={collaborators || []}
               viewedUserId={viewedUserId}
               setViewedUserId={setViewedUserId}

@@ -52,7 +52,8 @@ const AppSidebar = ({
     setActiveView(viewId);
   };
   
-  const isPatron = loggedInUser.role === 'PATRON';
+  // Add a guard to prevent crash if loggedInUser is null during initial render
+  const isPatron = loggedInUser?.role === 'PATRON';
 
   return (
     <Sidebar className="w-72 rounded-r-4xl hidden md:flex">
