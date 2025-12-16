@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState } from 'react'
@@ -11,7 +12,7 @@ import { fr } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
-import { collection, query } from 'firebase/firestore'
+import { collection, query, orderBy } from 'firebase/firestore'
 import { Skeleton } from '../ui/skeleton'
 
 type CalendarViewProps = {
@@ -23,7 +24,7 @@ const CalendarView = ({ viewedUserId, onAddEvent }: CalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date())
   
   const firestore = useFirestore();
-  const eventsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'events')) : null, [firestore, viewedUserId]);
+  const eventsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'events'), orderBy('date', 'asc')) : null, [firestore, viewedUserId]);
   const { data: events, isLoading } = useCollection<CalendarEvent>(eventsQuery);
 
   const weekStartsOn = 1; // Monday

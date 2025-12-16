@@ -2,7 +2,7 @@
 
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, FileText, Calendar, ArrowUpRight, Wand, Mic, ArrowRight, Clock, LogIn, LogOut } from 'lucide-react'
@@ -11,7 +11,7 @@ import type { Transaction, Recap, Event, User } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
 import { Skeleton } from '../ui/skeleton'
 import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase'
-import { collection, doc, query } from 'firebase/firestore'
+import { collection, doc, query, orderBy, limit } from 'firebase/firestore'
 
 type DashboardViewProps = {
   viewedUserId: string | null
@@ -29,20 +29,21 @@ const DashboardView = ({ viewedUserId, onQuickAdd, setActiveView }: DashboardVie
   const transactionsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'transactions')) : null, [firestore, viewedUserId]);
   const { data: transactions, isLoading: areTransactionsLoading } = useCollection<Transaction>(transactionsQuery);
   
-  const recapsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'recaps')) : null, [firestore, viewedUserId]);
+  const recapsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'recaps'), orderBy('date', 'desc'), limit(1)) : null, [firestore, viewedUserId]);
   const { data: recaps, isLoading: areRecapsLoading } = useCollection<Recap>(recapsQuery);
 
-  const eventsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'events')) : null, [firestore, viewedUserId]);
+  const eventsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'events'), orderBy('date', 'asc'), limit(1)) : null, [firestore, viewedUserId]);
   const { data: events, isLoading: areEventsLoading } = useCollection<Event>(eventsQuery);
 
   const isLoading = isUserLoading || areTransactionsLoading || areRecapsLoading || areEventsLoading;
   
   const balance = transactions ? transactions.reduce((acc, tx) => acc + (tx.type === 'BUDGET_ADD' ? tx.amount : -tx.amount), 0) : 0;
   const totalBudget = transactions ? transactions.filter(t => t.type === 'BUDGET_ADD').reduce((acc, tx) => acc + tx.amount, 0) : 0;
-  const latestRecap = recaps ? recaps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] : null;
-  const upcomingEvent = events ? events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] : null;
+  const latestRecap = recaps && recaps.length > 0 ? recaps[0] : null;
+  const upcomingEvent = events && events.length > 0 ? events[0] : null;
 
-  if (isLoading) {
+
+  if (isLoading && !user) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">

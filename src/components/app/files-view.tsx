@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useMemo } from 'react'
@@ -13,7 +14,7 @@ import { Upload, Search, FileText, MoreHorizontal, Download, Edit, Trash2 } from
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
-import { collection, query } from 'firebase/firestore'
+import { collection, query, orderBy } from 'firebase/firestore'
 import { Skeleton } from '../ui/skeleton'
 
 type FilesViewProps = {
@@ -25,7 +26,7 @@ const FilesView = ({ viewedUserId, onAddDocument }: FilesViewProps) => {
   const [searchTerm, setSearchTerm] = useState('')
 
   const firestore = useFirestore();
-  const documentsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'documents')) : null, [firestore, viewedUserId]);
+  const documentsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'documents'), orderBy('date', 'desc')) : null, [firestore, viewedUserId]);
   const { data: documents, isLoading } = useCollection<DocumentFile>(documentsQuery);
 
   const filteredDocuments = useMemo(() => {

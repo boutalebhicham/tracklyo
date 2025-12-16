@@ -14,7 +14,7 @@ import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Plus, ArrowDown, ArrowUp, Wallet, Clock, MoreHorizontal } from 'lucide-react'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
-import { collection, query } from 'firebase/firestore'
+import { collection, query, orderBy } from 'firebase/firestore'
 import { Skeleton } from '../ui/skeleton'
 
 type FinancesViewProps = {
@@ -27,7 +27,7 @@ const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewPr
   const [currentCurrency, setCurrentCurrency] = useState<Currency>('EUR')
   
   const firestore = useFirestore();
-  const transactionsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'transactions')) : null, [firestore, viewedUserId]);
+  const transactionsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'transactions'), orderBy('date', 'desc')) : null, [firestore, viewedUserId]);
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
   const { balance, totalBudget, totalExpenses } = useMemo(() => {
@@ -185,7 +185,7 @@ const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewPr
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.slice().reverse().map(tx => (
+                {transactions.map(tx => (
                   <TableRow key={tx.id}>
                     <TableCell className="font-medium">{tx.reason}</TableCell>
                     <TableCell className="text-muted-foreground">{format(parseISO(tx.date), 'd MMM yyyy, HH:mm', { locale: fr })}</TableCell>

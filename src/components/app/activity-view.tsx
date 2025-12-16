@@ -1,7 +1,8 @@
 
+
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import type { Recap, Comment, User } from '@/lib/definitions'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,7 +14,7 @@ import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates'
-import { collection, query } from 'firebase/firestore'
+import { collection, query, orderBy } from 'firebase/firestore'
 import Image from 'next/image'
 import { Skeleton } from '../ui/skeleton'
 
@@ -28,24 +29,22 @@ const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: Activity
 
   const firestore = useFirestore();
   
-  const recapsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'recaps')) : null, [firestore, viewedUserId]);
+  const recapsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'recaps'), orderBy('date', 'desc')) : null, [firestore, viewedUserId]);
   const { data: recaps, isLoading: areRecapsLoading } = useCollection<Recap>(recapsQuery);
 
+  const recapIds = useMemo(() => recaps?.map(r => r.id) || [], [recaps]);
+
   const commentsQuery = useMemoFirebase(() => {
-    if (!viewedUserId || !recaps || recaps.length === 0) return null;
-    // This part might need adjustment if you want comments from all recaps, not just the last one.
-    // For simplicity, we'll fetch comments for the most recent recap.
-    const lastRecapId = recaps.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.id;
-    if (!lastRecapId) return null;
-    return query(collection(firestore, `users/${viewedUserId}/recaps/${lastRecapId}/comments`));
-  }, [firestore, viewedUserId, recaps]);
-  const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+    if (!viewedUserId || recapIds.length === 0) return null;
+    return query(collection(firestore, `users/${viewedUserId}/recaps`), orderBy('date', 'desc'));
+  }, [firestore, viewedUserId, recapIds]);
+  // This is a simplified comments query. For a real app you might paginate or fetch comments per recap.
+  const { data: allComments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
 
   const isLoading = areRecapsLoading || areCommentsLoading;
 
-  const getUser = (id: string) => users.find(u => u.id === id)
+  const getUser = (id: string) => users.find(u => u.id === id);
 
-  // The current logged-in user can only add recaps if they are viewing their own profile.
   const canAddRecap = currentUser?.id === viewedUserId;
 
   const handleAddComment = (recapId: string, content: string) => {
@@ -57,13 +56,20 @@ const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: Activity
       content,
       date: new Date().toISOString()
     });
-    // Clear input field after submission if you control it with state
   };
 
-  const sortedRecaps = useMemo(() => {
-    if (!recaps) return [];
-    return recaps.sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
-  }, [recaps]);
+  const commentsByRecapId = useMemo(() => {
+    if (!allComments) return {};
+    return allComments.reduce((acc, comment) => {
+      const { recapId } = comment;
+      if (!acc[recapId]) {
+        acc[recapId] = [];
+      }
+      acc[recapId].push(comment);
+      return acc;
+    }, {} as Record<string, Comment[]>);
+  }, [allComments]);
+
 
   if (isLoading) {
     return (
@@ -110,7 +116,7 @@ const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: Activity
           </Card>
         )}
 
-        {sortedRecaps.length === 0 ? (
+        {recaps && recaps.length === 0 ? (
           <div className="text-center py-16 px-6 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-4xl">
               <div className="inline-block bg-gray-100 dark:bg-gray-800 p-4 rounded-full">
                   <Send className="text-primary" size={24}/>
@@ -119,8 +125,8 @@ const ActivityView = ({ viewedUserId, users, onAddRecap, currentUser }: Activity
               <p className="mt-1 text-muted-foreground">Aucun rapport pour le moment.</p>
           </div>
         ) : (
-            sortedRecaps.map(recap => {
-                const recapComments = comments ? comments.filter(c => c.recapId === recap.id) : [];
+            recaps && recaps.map(recap => {
+                const recapComments = commentsByRecapId[recap.id] || [];
                 const author = getUser(recap.authorId);
                 return (
                     <Card key={recap.id} className="rounded-4xl flex flex-col bg-card overflow-hidden w-full">
