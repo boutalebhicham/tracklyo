@@ -7,7 +7,7 @@ import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
-import type { User, Transaction, Recap, Event, Comment, Document as DocumentFile, AddUserForm, Todo } from '@/lib/definitions';
+import type { User, Transaction, Recap, Event, Comment, Document as DocumentFile, AddUserForm } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
 import DashboardView from '@/components/app/dashboard-view';
@@ -36,28 +36,54 @@ export default function Home() {
   const [modal, setModal] = useState<string | null>(null);
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
 
-  const loggedInUserDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [authUser, firestore]);
-  const { data: loggedInUserData } = useDoc<User>(loggedInUserDocRef);
+  // Set the initial user to view once authenticated
+  useEffect(() => {
+    if (authUser && !viewedUserId) {
+      setViewedUserId(authUser.uid);
+    }
+  }, [authUser, viewedUserId]);
 
   useEffect(() => {
     if (!isUserLoading && !authUser) {
       router.push('/login');
     }
-    // Set the viewed user to the logged-in user initially, as soon as auth is resolved.
-    if (authUser && !viewedUserId) {
-        setViewedUserId(authUser.uid);
-    }
   }, [authUser, isUserLoading, router]);
 
+  // Data for the logged-in user (manager)
+  const loggedInUserDocRef = useMemoFirebase(() => authUser ? doc(firestore, 'users', authUser.uid) : null, [authUser, firestore]);
+  const { data: loggedInUserData } = useDoc<User>(loggedInUserDocRef);
 
+  // Data for the currently viewed user (can be manager or collaborator)
   const viewedUserDocRef = useMemoFirebase(() => viewedUserId ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore]);
   const { data: viewedUserData } = useDoc<User>(viewedUserDocRef);
 
+  // Get collaborators only if the logged-in user is a PATRON
   const collaboratorsQuery = useMemoFirebase(() => {
     if (!authUser || !loggedInUserData || loggedInUserData.role !== 'PATRON') return null;
     return query(collection(firestore, 'users'), where('managerId', '==', authUser.uid));
   }, [firestore, authUser, loggedInUserData]);
   const { data: collaborators } = useCollection<User>(collaboratorsQuery);
+  
+  // Data queries now depend on `viewedUserId`, which is stable after initial load.
+  const transactionsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'transactions')) : null, [firestore, viewedUserId]);
+  const { data: transactions } = useCollection<Transaction>(transactionsQuery);
+  
+  const recapsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'recaps')) : null, [firestore, viewedUserId]);
+  const { data: recaps } = useCollection<Recap>(recapsQuery);
+
+  const eventsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'events')) : null, [firestore, viewedUserId]);
+  const { data: events } = useCollection<Event>(eventsQuery);
+
+  const documentsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'documents')) : null, [firestore, viewedUserId]);
+  const { data: documents } = useCollection<DocumentFile>(documentsQuery);
+  
+  const commentsQuery = useMemoFirebase(() => {
+    if (!viewedUserId || !recaps || recaps.length === 0) return null;
+    const lastRecapId = recaps.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.id;
+    if (!lastRecapId) return null;
+    return query(collection(firestore, `users/${viewedUserId}/recaps/${lastRecapId}/comments`));
+  }, [firestore, viewedUserId, recaps]);
+  const { data: comments } = useCollection<Comment>(commentsQuery);
 
   const handleLogout = () => {
     signOut(auth);
@@ -71,59 +97,35 @@ export default function Home() {
       setModal('addUser');
     }
   };
-
-  const authorId = authUser ? viewedUserId : null;
-
-  const transactionsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'transactions')) : null, [firestore, authorId]);
-  const { data: transactions } = useCollection<Transaction>(transactionsQuery);
-  
-  const recapsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'recaps')) : null, [firestore, authorId]);
-  const { data: recaps } = useCollection<Recap>(recapsQuery);
-
-  const eventsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'events')) : null, [firestore, authorId]);
-  const { data: events } = useCollection<Event>(eventsQuery);
-
-  const documentsQuery = useMemoFirebase(() => authorId ? query(collection(firestore, 'users', authorId, 'documents')) : null, [firestore, authorId]);
-  const { data: documents } = useCollection<DocumentFile>(documentsQuery);
-  
-  const commentsQuery = useMemoFirebase(() => {
-    if (!authorId || !recaps || recaps.length === 0) return null;
-    // This might be inefficient if there are many recaps. Consider fetching comments for visible recaps.
-    const lastRecapId = recaps.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.id;
-    if (!lastRecapId) return null;
-    return query(collection(firestore, `users/${authorId}/recaps/${lastRecapId}/comments`));
-  }, [firestore, authorId, recaps]);
-  const { data: comments } = useCollection<Comment>(commentsQuery);
-
   
   const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>) => {
-    if (!authorId) return;
-    const ref = collection(firestore, 'users', authorId, 'transactions');
+    if (!viewedUserId) return;
+    const ref = collection(firestore, 'users', viewedUserId, 'transactions');
     addDocumentNonBlocking(ref, {
       ...newTransaction,
-      authorId,
+      authorId: viewedUserId,
       date: new Date().toISOString(),
     });
     setModal(null);
   };
   
   const handleAddRecap = (newRecap: Omit<Recap, 'id' | 'authorId' | 'date'>) => {
-    if (!authorId) return;
-    const ref = collection(firestore, 'users', authorId, 'recaps');
+    if (!viewedUserId) return;
+    const ref = collection(firestore, 'users', viewedUserId, 'recaps');
     addDocumentNonBlocking(ref, { 
         ...newRecap,
-        authorId,
+        authorId: viewedUserId,
         date: new Date().toISOString()
      });
     setModal(null);
   };
   
   const handleAddEvent = (newEvent: Omit<Event, 'id' | 'authorId'>) => {
-    if (!authorId) return;
-    const ref = collection(firestore, 'users', authorId, 'events');
+    if (!viewedUserId) return;
+    const ref = collection(firestore, 'users', viewedUserId, 'events');
     addDocumentNonBlocking(ref, { 
         ...newEvent,
-        authorId
+        authorId: viewedUserId
      });
     setModal(null);
   };
@@ -162,13 +164,12 @@ export default function Home() {
     }
   }
 
-
   const handleAddDocument = (newDocument: Omit<DocumentFile, 'id' | 'authorId' | 'date'>) => {
-    if (!authorId) return;
-    const ref = collection(firestore, 'users', authorId, 'documents');
+    if (!viewedUserId) return;
+    const ref = collection(firestore, 'users', viewedUserId, 'documents');
     addDocumentNonBlocking(ref, { 
         ...newDocument,
-        authorId,
+        authorId: viewedUserId,
         date: new Date().toISOString()
      });
     setModal(null);
@@ -181,7 +182,6 @@ export default function Home() {
     return userList;
   }, [loggedInUserData, collaborators]);
 
-
   if (isUserLoading || !authUser) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
@@ -191,15 +191,11 @@ export default function Home() {
   }
 
   const renderContent = () => {
-    // We now render the content as soon as auth is ready.
-    // The individual views will handle their own loading states based on the data they receive.
-    const userToDisplay = viewedUserData || loggedInUserData;
-
     switch(activeView) {
       case 'accueil':
         return (
           <DashboardView
-            user={userToDisplay}
+            user={viewedUserData} // Pass viewedUserData, which can be null initially
             transactions={transactions || []}
             recaps={recaps || []}
             events={events || []}
@@ -223,7 +219,7 @@ export default function Home() {
             users={allUsersForActivity}
             onAddRecap={() => setModal('addRecap')}
             currentUser={loggedInUserData}
-            authorId={authorId!}
+            authorId={viewedUserId!}
           />
         );
       case 'agenda':
@@ -241,7 +237,7 @@ export default function Home() {
           />
         );
       default:
-        return <DashboardView user={userToDisplay} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
+        return <DashboardView user={viewedUserData} transactions={transactions || []} recaps={recaps || []} events={events || []} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
     }
   }
 
@@ -272,7 +268,7 @@ export default function Home() {
             />
           )}
           <div className="p-4 sm:p-6 lg:p-8">
-            {!isMobile && <AppHeader user={viewedUserData || loggedInUserData} />}
+            <AppHeader user={viewedUserData} />
             <div className="mt-6">
               {renderContent()}
             </div>
@@ -285,13 +281,13 @@ export default function Home() {
       
       <PaywallModal isOpen={modal === 'paywall'} onClose={() => setModal(null)} />
       {loggedInUserData && <AddUserModal isOpen={modal === 'addUser'} onClose={() => setModal(null)} onAddUser={handleAddUser} />}
-      {authorId && loggedInUserData && (
+      {viewedUserId && loggedInUserData && (
         <>
           <AddTransactionModal 
             isOpen={modal === 'addTransaction'} 
             onClose={() => setModal(null)} 
             onAddTransaction={handleAddTransaction} 
-            authorId={authorId}
+            authorId={viewedUserId}
             viewAs={loggedInUserData.role}
             transactions={transactions || []}
           />
@@ -299,19 +295,19 @@ export default function Home() {
             isOpen={modal === 'addRecap'} 
             onClose={() => setModal(null)} 
             onAddRecap={handleAddRecap}
-            authorId={authorId}
+            authorId={viewedUserId}
           />
           <AddEventModal
             isOpen={modal === 'addEvent'}
             onClose={() => setModal(null)}
             onAddEvent={handleAddEvent}
-            authorId={authorId}
+            authorId={viewedUserId}
           />
           <AddDocumentModal
             isOpen={modal === 'addDocument'}
             onClose={() => setModal(null)}
             onAddDocument={handleAddDocument}
-            authorId={authorId}
+            authorId={viewedUserId}
           />
         </>
       )}

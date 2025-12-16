@@ -8,7 +8,7 @@ import { fr } from 'date-fns/locale'
 import { Skeleton } from '../ui/skeleton'
 
 type AppHeaderProps = {
-  user: User | null;
+  user: User | null | undefined;
 }
 
 const AppHeader = ({ user }: AppHeaderProps) => {
@@ -17,6 +17,18 @@ const AppHeader = ({ user }: AppHeaderProps) => {
     if (hour < 12) return "Bonjour";
     if (hour < 18) return "Bon après-midi";
     return "Bonsoir";
+  }
+
+  // Handle the case where user data is still loading
+  if (user === undefined) {
+      return (
+          <header className="flex items-center justify-between">
+              <div>
+                  <Skeleton className="h-10 w-64 mb-2" />
+                  <Skeleton className="h-5 w-80" />
+              </div>
+          </header>
+      )
   }
 
   const userName = user ? user.name.split(' ')[0] : null;
