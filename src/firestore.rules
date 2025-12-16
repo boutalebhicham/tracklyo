@@ -1,13 +1,18 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/{path=**} {
-      allow read, write: if request.auth.uid == userId;
+    
+    // Règles pour les todos
+    match /users/{userId}/todos/{todoId} {
+      // L'utilisateur peut lire, créer, modifier et supprimer ses propres todos
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-
+    
+    // Règles pour les documents utilisateurs (si vous en avez)
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+    
+    // Si vous avez d'autres collections, ajoutez-les ici
   }
 }
