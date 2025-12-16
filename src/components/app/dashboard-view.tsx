@@ -57,22 +57,6 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActi
 
       {/* Right Column */}
       <div className="lg:col-span-2 space-y-6">
-        <Card className="bg-primary text-primary-foreground rounded-4xl shadow-lg">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-white/20 rounded-lg"><Wand size={20} /></div>
-              <div>
-                <Badge className="bg-white/20 text-white border-none mb-1">NOUVEAU</Badge>
-                <h3 className="text-xl font-bold">Assistant Vocal</h3>
-                <p className="text-sm opacity-80">"J'ai fini le chantier..." Dites-le, l'IA s'occupe de tout noter.</p>
-              </div>
-            </div>
-            <Button size="icon" variant="ghost" className="bg-white/20 hover:bg-white/30 rounded-full h-14 w-14">
-              <Mic size={24} />
-            </Button>
-          </CardContent>
-        </Card>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <Card className="rounded-4xl shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onQuickAdd('addTransaction')}>
             <CardContent className="p-6 flex items-center gap-4">
