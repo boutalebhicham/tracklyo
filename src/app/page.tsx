@@ -188,7 +188,7 @@ export default function Home() {
   }, [loggedInUserData, collaborators, viewedUserData]);
 
 
-  if (isUserLoading || !authUser || !loggedInUserData || !viewedUserId) {
+  if (isUserLoading || !authUser) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement de votre espace de travail...</p>
@@ -197,11 +197,10 @@ export default function Home() {
   }
 
   const renderContent = () => {
-    if (!viewedUserData) {
+    if (!viewedUserData || !loggedInUserData) {
         return (
              <div className="flex flex-col items-center justify-center pt-20 text-center">
-                <h3 className="text-lg font-semibold">Sélectionnez un collaborateur</h3>
-                <p className="text-muted-foreground">Utilisez le menu pour choisir un profil à consulter.</p>
+                <p>Chargement des données...</p>
             </div>
         )
     }
@@ -259,18 +258,20 @@ export default function Home() {
   return (
     <SidebarProvider>
       <div className="flex w-full min-h-screen bg-gray-100 dark:bg-neutral-900">
-        <AppSidebar
-          loggedInUser={loggedInUserData}
-          collaborators={collaborators || []}
-          activeView={activeView}
-          setActiveView={setActiveView}
-          onLogout={handleLogout}
-          onAddCollaborator={handleAddCollaborator}
-          viewedUserId={viewedUserId}
-          setViewedUserId={setViewedUserId}
-        />
+        {loggedInUserData && (
+          <AppSidebar
+            loggedInUser={loggedInUserData}
+            collaborators={collaborators || []}
+            activeView={activeView}
+            setActiveView={setActiveView}
+            onLogout={handleLogout}
+            onAddCollaborator={handleAddCollaborator}
+            viewedUserId={viewedUserId}
+            setViewedUserId={setViewedUserId}
+          />
+        )}
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
-           {isMobile && (
+           {isMobile && loggedInUserData && (
             <AppMobileHeader 
               loggedInUser={loggedInUserData}
               collaborators={collaborators || []}
@@ -293,33 +294,37 @@ export default function Home() {
       {viewedUserData && <WhatsAppFab phoneNumber={viewedUserData.phoneNumber} />}
       
       <PaywallModal isOpen={modal === 'paywall'} onClose={() => setModal(null)} />
-      <AddUserModal isOpen={modal === 'addUser'} onClose={() => setModal(null)} onAddUser={handleAddUser} />
-      <AddTransactionModal 
-        isOpen={modal === 'addTransaction'} 
-        onClose={() => setModal(null)} 
-        onAddTransaction={handleAddTransaction} 
-        authorId={authorId!}
-        viewAs={loggedInUserData.role}
-        transactions={transactions || []}
-      />
-      <AddRecapModal 
-        isOpen={modal === 'addRecap'} 
-        onClose={() => setModal(null)} 
-        onAddRecap={handleAddRecap}
-        authorId={authorId!}
-      />
-      <AddEventModal
-        isOpen={modal === 'addEvent'}
-        onClose={() => setModal(null)}
-        onAddEvent={handleAddEvent}
-        authorId={authorId!}
-      />
-      <AddDocumentModal
-        isOpen={modal === 'addDocument'}
-        onClose={() => setModal(null)}
-        onAddDocument={handleAddDocument}
-        authorId={authorId!}
-      />
+      {loggedInUserData && <AddUserModal isOpen={modal === 'addUser'} onClose={() => setModal(null)} onAddUser={handleAddUser} />}
+      {authorId && loggedInUserData && (
+        <>
+          <AddTransactionModal 
+            isOpen={modal === 'addTransaction'} 
+            onClose={() => setModal(null)} 
+            onAddTransaction={handleAddTransaction} 
+            authorId={authorId}
+            viewAs={loggedInUserData.role}
+            transactions={transactions || []}
+          />
+          <AddRecapModal 
+            isOpen={modal === 'addRecap'} 
+            onClose={() => setModal(null)} 
+            onAddRecap={handleAddRecap}
+            authorId={authorId}
+          />
+          <AddEventModal
+            isOpen={modal === 'addEvent'}
+            onClose={() => setModal(null)}
+            onAddEvent={handleAddEvent}
+            authorId={authorId}
+          />
+          <AddDocumentModal
+            isOpen={modal === 'addDocument'}
+            onClose={() => setModal(null)}
+            onAddDocument={handleAddDocument}
+            authorId={authorId}
+          />
+        </>
+      )}
     </SidebarProvider>
   );
 }
