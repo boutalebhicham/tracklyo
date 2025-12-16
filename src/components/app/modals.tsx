@@ -89,8 +89,6 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
   const [transactionType, setTransactionType] = useState<TransactionType>(viewAs === 'PATRON' ? 'BUDGET_ADD' : 'EXPENSE');
   const [error, setError] = useState('');
 
-  const isPatron = viewAs === 'PATRON';
-
   const handleSubmit = () => {
     const numericAmount = parseFloat(amount);
     if (!numericAmount || !reason) {
@@ -119,25 +117,23 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
       <GlassDialogContent>
         <DialogHeader><DialogTitle>Nouvelle Transaction</DialogTitle></DialogHeader>
         <div className="space-y-4 py-4">
-          {isPatron && (
-             <div className="space-y-2">
-                <Label>Type de transaction</Label>
-                <RadioGroup value={transactionType} onValueChange={(v: TransactionType) => setTransactionType(v)} className="grid grid-cols-2 gap-4">
-                  <div>
-                    <RadioGroupItem value="BUDGET_ADD" id="r-budget" className="peer sr-only" />
-                    <Label htmlFor="r-budget" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                      Ajout de budget
-                    </Label>
-                  </div>
-                  <div>
-                    <RadioGroupItem value="EXPENSE" id="r-expense" className="peer sr-only" />
-                    <Label htmlFor="r-expense" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                      Dépense
-                    </Label>
-                  </div>
-                </RadioGroup>
-             </div>
-          )}
+          <div className="space-y-2">
+            <Label>Type de transaction</Label>
+            <RadioGroup value={transactionType} onValueChange={(v: TransactionType) => setTransactionType(v)} className="grid grid-cols-2 gap-4">
+              <div>
+                <RadioGroupItem value="BUDGET_ADD" id="r-budget" className="peer sr-only" />
+                <Label htmlFor="r-budget" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                  Ajout de budget
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="EXPENSE" id="r-expense" className="peer sr-only" />
+                <Label htmlFor="r-expense" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                  Dépense
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2"><Label htmlFor="amount">Montant</Label><Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-xl" /></div>
             <div className="space-y-2"><Label>Devise</Label>
