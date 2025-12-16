@@ -56,7 +56,7 @@ export interface Comment {
   date: string;
 }
 
-export interface CalendarEvent {
+export interface Event {
   id: string;
   authorId: string;
   title: string;
@@ -64,7 +64,7 @@ export interface CalendarEvent {
   date: string; // ISO string for datetime
 }
 
-export interface DocumentFile {
+export interface Document {
   id: string;
   authorId: string;
   name: string;

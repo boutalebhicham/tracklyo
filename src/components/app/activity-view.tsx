@@ -20,7 +20,7 @@ type ActivityViewProps = {
   comments: Comment[]
   users: User[]
   onAddRecap: () => void
-  currentUser: User
+  currentUser: User | null
   authorId: string
 }
 
@@ -30,10 +30,10 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, author
   const firestore = useFirestore();
 
   // The current logged-in user can only add recaps if they are viewing their own profile.
-  const canAddRecap = currentUser.id === authorId;
+  const canAddRecap = currentUser?.id === authorId;
 
   const handleAddComment = (recapId: string, content: string) => {
-    if (!content.trim()) return;
+    if (!content.trim() || !currentUser) return;
     const ref = collection(firestore, 'users', authorId, 'recaps', recapId, 'comments');
     addDocumentNonBlocking(ref, {
       recapId,
@@ -57,7 +57,7 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, author
       
       <div className="max-w-3xl mx-auto space-y-6">
         
-        {canAddRecap && (
+        {canAddRecap && currentUser && (
           <Card className="rounded-4xl shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -136,7 +136,7 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, author
                             )
                             })}
                         </div>
-                        <div className="w-full flex items-center gap-2 pt-4 border-t">
+                        {currentUser && <div className="w-full flex items-center gap-2 pt-4 border-t">
                             <Avatar className="w-8 h-8">
                                 <AvatarImage src={currentUser?.avatar}/>
                                 <AvatarFallback>{currentUser?.name.charAt(0)}</AvatarFallback>
@@ -152,7 +152,7 @@ const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, author
                             >
                                 <Input name="comment-input" placeholder="Ajouter un commentaire..." className="rounded-xl bg-gray-100 dark:bg-neutral-800 focus-visible:ring-primary"/>
                             </form>
-                        </div>
+                        </div>}
                     </CardFooter>
                     </Card>
                 )

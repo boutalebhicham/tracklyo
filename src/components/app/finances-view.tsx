@@ -16,7 +16,7 @@ import { Plus, ArrowDown, ArrowUp, Wallet, Clock, MoreHorizontal } from 'lucide-
 type FinancesViewProps = {
   transactions: Transaction[]
   onAddTransaction: () => void
-  viewAs: string
+  viewAs: string | undefined
 }
 
 const FinancesView = ({ transactions, onAddTransaction, viewAs }: FinancesViewProps) => {

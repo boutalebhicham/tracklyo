@@ -7,14 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button'
 import { Plus, FileText, Calendar, ArrowUpRight, Wand, Mic, ArrowRight, Clock, LogIn, LogOut } from 'lucide-react'
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils'
-import type { Transaction, Recap, CalendarEvent, User } from '@/lib/definitions'
+import type { Transaction, Recap, Event, User } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
+import { Skeleton } from '../ui/skeleton'
 
 type DashboardViewProps = {
-  user: User
+  user: User | null
   transactions: Transaction[]
   recaps: Recap[]
-  events: CalendarEvent[]
+  events: Event[]
   onQuickAdd: (modal: 'addTransaction' | 'addEvent') => void
   setActiveView: (view: string) => void;
 }
@@ -25,6 +26,26 @@ const DashboardView = ({ user, transactions, recaps, events, onQuickAdd, setActi
   const totalBudget = transactions.filter(t => t.type === 'BUDGET_ADD').reduce((acc, tx) => acc + tx.amount, 0)
   const latestRecap = recaps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
   const upcomingEvent = events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
+
+  if (!user) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <Skeleton className="h-[280px] rounded-4xl" />
+        </div>
+        <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Skeleton className="h-[88px] rounded-4xl" />
+            <Skeleton className="h-[88px] rounded-4xl" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Skeleton className="h-[120px] rounded-4xl" />
+            <Skeleton className="h-[120px] rounded-4xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isCollaborator = user.role === 'RESPONSABLE';
   const canManage = user.role === 'PATRON';
