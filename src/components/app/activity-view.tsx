@@ -22,21 +22,19 @@ type ActivityViewProps = {
   onAddRecap: () => void
   currentUser: User
   authorId: string
-  projectId: string
 }
 
-const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, authorId, projectId }: ActivityViewProps) => {
+const ActivityView = ({ recaps, comments, users, onAddRecap, currentUser, authorId }: ActivityViewProps) => {
 
   const getUser = (id: string) => users.find(u => u.id === id)
   const firestore = useFirestore();
 
   const handleAddComment = (recapId: string, content: string) => {
     if (!content.trim()) return;
-    const ref = collection(firestore, 'users', authorId, 'projects', projectId, 'recaps', recapId, 'comments');
+    const ref = collection(firestore, 'users', authorId, 'recaps', recapId, 'comments');
     addDocumentNonBlocking(ref, {
       recapId,
       authorId: currentUser.id,
-      projectId,
       content,
       date: new Date().toISOString()
     });

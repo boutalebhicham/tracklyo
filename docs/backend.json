@@ -15,18 +15,21 @@
       },
       "required": ["id", "name", "email", "role"]
     },
-    "Project": {
+    "Transaction": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Project",
+      "title": "Transaction",
       "type": "object",
-      "description": "Represents a project owned by a user.",
+      "description": "Represents a financial transaction for a specific project.",
       "properties": {
-        "id": { "type": "string", "description": "Unique identifier for the project." },
-        "name": { "type": "string", "description": "Name of the project." },
-        "authorId": { "type": "string", "description": "ID of the user who owns the project." },
-        "createdAt": { "type": "string", "description": "Timestamp of when the project was created.", "format": "date-time" }
+        "id": { "type": "string", "description": "Unique identifier for the transaction entity." },
+        "amount": { "type": "number", "description": "Amount of the transaction." },
+        "reason": { "type": "string", "description": "Reason for the transaction." },
+        "date": { "type": "string", "description": "Date of the transaction.", "format": "date-time" },
+        "type": { "type": "string", "description": "Type of transaction (BUDGET_ADD or EXPENSE)." },
+        "currency": { "type": "string", "description": "Currency of the transaction (EUR, USD, XOF)." },
+        "authorId": { "type": "string", "description": "Reference to User." }
       },
-      "required": ["id", "name", "authorId", "createdAt"]
+      "required": ["id", "amount", "reason", "date", "type", "currency", "authorId"]
     },
     "Recap": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -35,29 +38,27 @@
       "description": "Represents an activity recap created by a RESPONSABLE user for a specific project.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the recap entity." },
-        "projectId": { "type": "string", "description": "Reference to Project." },
         "title": { "type": "string", "description": "Title of the activity recap." },
         "type": { "type": "string", "description": "Type of recap (DAILY or WEEKLY)." },
         "description": { "type": "string", "description": "Detailed description of the activity recap." },
         "date": { "type": "string", "description": "Date of the activity recap.", "format": "date-time" },
         "authorId": { "type": "string", "description": "Reference to User." }
       },
-      "required": ["id", "projectId", "title", "type", "description", "date", "authorId"]
+      "required": ["id", "title", "type", "description", "date", "authorId"]
     },
-    "Comment": {
+     "Comment": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Comment",
       "type": "object",
       "description": "Represents a comment on a recap.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the comment entity." },
-        "projectId": { "type": "string", "description": "Reference to Project." },
         "recapId": { "type": "string", "description": "Reference to Recap." },
         "authorId": { "type": "string", "description": "Reference to User." },
         "content": { "type": "string", "description": "Content of the comment." },
         "date": { "type": "string", "description": "Date of the comment.", "format": "date-time" }
       },
-      "required": ["id", "projectId", "recapId", "authorId", "content", "date"]
+      "required": ["id", "recapId", "authorId", "content", "date"]
     },
     "Event": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -66,13 +67,12 @@
       "description": "Represents a calendar event for a specific project.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the event entity." },
-        "projectId": { "type": "string", "description": "Reference to Project." },
         "title": { "type": "string", "description": "Title of the calendar event." },
         "description": { "type": "string", "description": "Description of the calendar event." },
         "date": { "type": "string", "description": "Date and time of the calendar event.", "format": "date-time" },
         "authorId": { "type": "string", "description": "Reference to User." }
       },
-      "required": ["id", "projectId", "title", "description", "date", "authorId"]
+      "required": ["id", "title", "description", "date", "authorId"]
     },
     "Document": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -81,31 +81,13 @@
       "description": "Represents a document for a specific project.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the document entity." },
-        "projectId": { "type": "string", "description": "Reference to Project." },
         "name": { "type": "string", "description": "Name of the document." },
         "type": { "type": "string", "description": "Type of document." },
         "date": { "type": "string", "description": "Upload date of the document.", "format": "date-time" },
         "authorId": { "type": "string", "description": "Reference to User." },
         "size": { "type": "string", "description": "Size of the document." }
       },
-      "required": ["id", "projectId", "name", "type", "date", "authorId", "size"]
-    },
-    "Transaction": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Transaction",
-      "type": "object",
-      "description": "Represents a financial transaction for a specific project.",
-      "properties": {
-        "id": { "type": "string", "description": "Unique identifier for the transaction entity." },
-        "projectId": { "type": "string", "description": "Reference to Project." },
-        "amount": { "type": "number", "description": "Amount of the transaction." },
-        "reason": { "type": "string", "description": "Reason for the transaction." },
-        "date": { "type": "string", "description": "Date of the transaction.", "format": "date-time" },
-        "type": { "type": "string", "description": "Type of transaction (BUDGET_ADD or EXPENSE)." },
-        "currency": { "type": "string", "description": "Currency of the transaction (EUR, USD, XOF)." },
-        "authorId": { "type": "string", "description": "Reference to User." }
-      },
-      "required": ["id", "projectId", "amount", "reason", "date", "type", "currency", "authorId"]
+      "required": ["id", "name", "type", "date", "authorId", "size"]
     }
   },
   "auth": {
@@ -125,23 +107,23 @@
         }
       },
       {
-        "path": "/users/{userId}/projects/{projectId}",
+        "path": "/users/{userId}/transactions/{transactionId}",
         "definition": {
-          "entityName": "Project",
-          "schema": { "$ref": "#/backend/entities/Project" },
-          "description": "Stores projects owned by a user."
+          "entityName": "Transaction",
+          "schema": { "$ref": "#/backend/entities/Transaction" },
+          "description": "Stores transactions for a specific user."
         }
       },
       {
-        "path": "/users/{userId}/projects/{projectId}/recaps/{recapId}",
+        "path": "/users/{userId}/recaps/{recapId}",
         "definition": {
           "entityName": "Recap",
           "schema": { "$ref": "#/backend/entities/Recap" },
-          "description": "Stores recaps for a specific project."
+          "description": "Stores recaps for a specific user."
         }
       },
-      {
-        "path": "/users/{userId}/projects/{projectId}/recaps/{recapId}/comments/{commentId}",
+       {
+        "path": "/users/{userId}/recaps/{recapId}/comments/{commentId}",
         "definition": {
           "entityName": "Comment",
           "schema": { "$ref": "#/backend/entities/Comment" },
@@ -149,27 +131,19 @@
         }
       },
       {
-        "path": "/users/{userId}/projects/{projectId}/events/{eventId}",
+        "path": "/users/{userId}/events/{eventId}",
         "definition": {
           "entityName": "Event",
           "schema": { "$ref": "#/backend/entities/Event" },
-          "description": "Stores events for a specific project."
+          "description": "Stores events for a specific user."
         }
       },
       {
-        "path": "/users/{userId}/projects/{projectId}/documents/{documentId}",
+        "path": "/users/{userId}/documents/{documentId}",
         "definition": {
           "entityName": "Document",
           "schema": { "$ref": "#/backend/entities/Document" },
-          "description": "Stores documents for a specific project."
-        }
-      },
-      {
-        "path": "/users/{userId}/projects/{projectId}/transactions/{transactionId}",
-        "definition": {
-          "entityName": "Transaction",
-          "schema": { "$ref": "#/backend/entities/Transaction" },
-          "description": "Stores transactions for a specific project."
+          "description": "Stores documents for a specific user."
         }
       }
     ]
