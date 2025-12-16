@@ -8,23 +8,29 @@ service cloud.firestore {
     }
 
     function isManagerOf(collaboratorId) {
-      // This function now correctly checks if the requesting user is the manager of the user whose data is being accessed.
-      // It assumes that a 'RESPONSABLE' user has a 'managerId' field pointing to their 'PATRON'.
       let userDoc = get(/databases/$(database)/documents/users/$(collaboratorId));
-      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' && userDoc.data.managerId == request.auth.uid;
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+             userDoc.data.managerId == request.auth.uid;
     }
 
     match /users/{userId} {
-      // A user can read/write their own profile.
-      // A manager (PATRON) can read the profile of their collaborators.
       allow read, write: if isOwner(userId) || isManagerOf(userId);
 
-      // Rule for listing subcollections (e.g., transactions, recaps)
-      allow list: if isOwner(userId) || isManagerOf(userId);
-
-      // Rule for individual document access in subcollections
+      // Règle spécifique et permissive pour les todos
+      match /todos/{todoId} {
+        allow read, write: if request.auth != null;
+      }
+      
       match /{subcollection}/{docId} {
+        // Cette règle s'appliquera aux autres sous-collections (recaps, transactions, etc.)
+        // mais pas aux todos car la règle plus spécifique ci-dessus prend le dessus.
         allow read, write: if isOwner(userId) || isManagerOf(userId);
+
+        match /{nestedSubcollection}/{nestedDocId} {
+          allow read, write: if isOwner(userId) || isManagerOf(userId);
+        }
       }
     }
   }
