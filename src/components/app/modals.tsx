@@ -17,17 +17,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm, Todo } from '@/lib/definitions';
+import type { User, Currency, Transaction, Recap, CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Image as ImageIcon, Video, Mic, Upload, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
-
 
 type ModalProps = {
   isOpen: boolean;
@@ -325,78 +319,3 @@ export const AddDocumentModal = ({ isOpen, onClose, onAddDocument, authorId }: M
         </Dialog>
     )
 };
-
-
-export const AddTodoModal = ({ isOpen, onClose, onAddTodo }: ModalProps & { onAddTodo: (todo: Omit<Todo, 'id' | 'authorId' | 'assigneeId' | 'createdAt' | 'status'>) => void }) => {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [deadline, setDeadline] = useState<Date | undefined>();
-
-    const handleSubmit = () => {
-        if(title && deadline) {
-            onAddTodo({ title, description, deadline: deadline.toISOString() });
-            setTitle('');
-            setDescription('');
-            setDeadline(undefined);
-            onClose();
-        }
-    }
-
-    const resetAndClose = () => {
-      setTitle('');
-      setDescription('');
-      setDeadline(undefined);
-      onClose();
-    }
-
-    return (
-        <Dialog open={isOpen} onOpenChange={resetAndClose}>
-            <GlassDialogContent>
-                <DialogHeader>
-                    <DialogTitle>Nouvelle tâche</DialogTitle>
-                    <DialogDescription>Assignez une tâche à ce collaborateur.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="todo-title">Titre de la tâche</Label>
-                        <Input id="todo-title" value={title} onChange={e => setTitle(e.target.value)} className="rounded-xl" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="todo-desc">Description (optionnel)</Label>
-                        <Textarea id="todo-desc" value={description} onChange={e => setDescription(e.target.value)} className="rounded-xl"/>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Échéance</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full justify-start text-left font-normal rounded-xl",
-                              !deadline && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {deadline ? format(deadline, "PPP") : <span>Choisir une date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 rounded-2xl">
-                          <Calendar
-                            mode="single"
-                            selected={deadline}
-                            onSelect={setDeadline}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleSubmit} className="rounded-xl" disabled={!title || !deadline}>
-                    Assigner la tâche
-                  </Button>
-                </DialogFooter>
-            </GlassDialogContent>
-        </Dialog>
-    )
-}

@@ -5,28 +5,19 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      match /transactions/{transactionId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Generic rule for subcollections
+      match /{subcollection}/{docId} {
+        // A user can read/write their own subcollections.
+        // A manager (PATRON) can read subcollections of their collaborators.
+        allow read, write: if request.auth != null && 
+                            (request.auth.uid == userId || 
+                             (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+                              get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid));
       }
       
-      match /recaps/{recapId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-
-        match /comments/{commentId} {
-          allow read, write: if request.auth != null;
-        }
-      }
-
-      match /events/{eventId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /documents/{documentId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /todos/{todoId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /recaps/{recapId}/comments/{commentId} {
+        allow read, write: if request.auth != null;
       }
     }
   }
