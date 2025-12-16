@@ -1,41 +1,37 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
-      // A user can read/write their own profile.
-      // A PATRON can read the profile of a RESPONSABLE they manage.
-      allow read: if request.auth != null && (
-        request.auth.uid == userId || 
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
-         resource.data.managerId == request.auth.uid)
-      );
+      allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      // A user can write to their own profile.
-      allow write: if request.auth != null && request.auth.uid == userId;
-
-      // Subcollections
+      // Allow owner to read/write their own subcollections
       match /transactions/{transactionId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+      
       match /recaps/{recapId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        // Allow any authenticated user to comment for now
+        match /comments/{commentId} {
+          allow read, write: if request.auth != null;
+        }
       }
+
       match /events/{eventId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
       match /documents/{documentId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
       match /todos/{todoId} {
-        // PATRON can R/W todos for their RESPONSABLE.
-        // RESPONSABLE can only read and update their own todos.
-        allow read, create, delete: if request.auth != null && 
-            (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
-            get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid);
-            
-        allow read, update: if request.auth != null && request.auth.uid == userId;
+        // This rule allows a user to read and write to their OWN todos subcollection.
+        // This covers get, list, create, update, delete.
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
   }
