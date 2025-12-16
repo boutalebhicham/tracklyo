@@ -26,7 +26,6 @@ type AppSidebarProps = {
 
 const menuItems = [
   { id: 'accueil', label: 'Accueil', icon: LayoutGrid },
-  { id: 'ia', label: 'Assistant IA', icon: Wand },
   { id: 'activite', label: 'Activité', icon: Activity },
   { id: 'agenda', label: 'Agenda', icon: Calendar },
   { id: 'fichiers', label: 'Fichiers', icon: Folder },
