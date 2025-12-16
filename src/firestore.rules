@@ -8,8 +8,10 @@ service cloud.firestore {
     }
 
     function isManagerOf(collaboratorId) {
+      // This function now correctly checks if the requesting user is the manager of the user whose data is being accessed.
+      // It assumes that a 'RESPONSABLE' user has a 'managerId' field pointing to their 'PATRON'.
       let userDoc = get(/databases/$(database)/documents/users/$(collaboratorId));
-      return request.auth != null && userDoc.data.managerId == request.auth.uid;
+      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' && userDoc.data.managerId == request.auth.uid;
     }
 
     match /users/{userId} {
@@ -17,8 +19,10 @@ service cloud.firestore {
       // A manager (PATRON) can read the profile of their collaborators.
       allow read, write: if isOwner(userId) || isManagerOf(userId);
 
-      // A user can read/write their own subcollections.
-      // A manager (PATRON) can also read/write the subcollections of their collaborators.
+      // Rule for listing subcollections (e.g., transactions, recaps)
+      allow list: if isOwner(userId) || isManagerOf(userId);
+
+      // Rule for individual document access in subcollections
       match /{subcollection}/{docId} {
         allow read, write: if isOwner(userId) || isManagerOf(userId);
       }
