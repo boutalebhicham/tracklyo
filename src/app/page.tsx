@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
-import { signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
 import type { User, Transaction, Recap, CalendarEvent, Comment, DocumentFile, AddUserForm } from '@/lib/definitions';
@@ -18,7 +18,7 @@ import FilesView from '@/components/app/files-view';
 import WhatsAppFab from '@/components/app/whatsapp-fab';
 import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal } from '@/components/app/modals';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
@@ -42,8 +42,8 @@ export default function Home() {
       router.push('/login');
     }
     // When authUser is loaded and loggedInUserData is available, set the initial viewed user.
-    if (loggedInUserData && !viewedUserId) {
-        setViewedUserId(loggedInUserData.id);
+    if (authUser && !viewedUserId) {
+        setViewedUserId(authUser.uid);
     }
   }, [authUser, isUserLoading, router, loggedInUserData, viewedUserId]);
 
@@ -127,43 +127,39 @@ export default function Home() {
   };
   
   const handleAddUser = async (newUser: AddUserForm) => {
-    if (!authUser || !newUser.password) return;
-  
-    // In a real app, this should be a cloud function.
-    // For this prototype, we'll use a trick: create the user, but we can't sign them in.
-    // We create a temporary, secondary Firebase app instance to do this without affecting the current user's session.
-    
-    try {
-      // This is a simplified approach. A robust solution would use Firebase Functions.
-      const userCredential = await createUserWithEmailAndPassword(auth, newUser.email, newUser.password);
-      const newAuthUser = userCredential.user;
+    if (!authUser) return;
+    setModal(null);
 
-      const userDocRef = doc(firestore, "users", newAuthUser.uid);
+    try {
+      const idToken = await authUser.getIdToken();
+      const response = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          name: newUser.name,
+          email: newUser.email,
+          password: newUser.password
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "La création de l'utilisateur a échoué.");
+      }
       
-      const fullUser: User = {
-        id: newAuthUser.uid,
-        email: newUser.email,
-        name: newUser.name,
-        role: 'RESPONSABLE',
-        managerId: authUser.uid,
-        avatar: `https://picsum.photos/seed/${newAuthUser.uid}/100/100`,
-        phoneNumber: '', // Not collected in this form
-      };
-      
-      setDocumentNonBlocking(userDocRef, fullUser, { merge: true });
+      const { uid } = await response.json();
+
       toast({ title: "Collaborateur ajouté !", description: `${newUser.name} peut maintenant se connecter.` });
 
     } catch (error: any) {
       console.error("Error creating collaborator:", error);
-      toast({ variant: "destructive", title: "Erreur", description: "Impossible de créer le collaborateur. L'email est peut-être déjà utilisé." });
-    } finally {
-      // It's important to sign the manager back in if createUserWithEmailAndPassword changed the auth state.
-      // However, with separate auth instances this isn't an issue. Given the client-side constraints,
-      // we accept that the manager might have to re-login if the session is disrupted.
-      // A more complex solution would manage multiple auth instances.
-      setModal(null);
+      toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de créer le collaborateur." });
     }
   }
+
 
   const handleAddDocument = (newDocument: Omit<DocumentFile, 'id' | 'authorId' | 'date'>) => {
     if (!authorId) return;

@@ -14,12 +14,13 @@ service cloud.firestore {
 
       // A user can update their own profile.
       // A PATRON can create a RESPONSABLE profile (and assign managerId).
-      allow write: if request.auth != null && (
-        request.auth.uid == userId ||
-        (request.method == 'create' && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
-         request.resource.data.managerId == request.auth.uid)
-      );
+      allow write: if request.auth != null && request.auth.uid == userId;
+          
+      // A PATRON can create a user document for a RESPONSABLE
+      allow create: if request.auth != null &&
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+                      request.resource.data.managerId == request.auth.uid;
+
 
       // Subcollections
       match /{subcollection}/{docId} {
@@ -33,17 +34,25 @@ service cloud.firestore {
         );
         
         // Only the user themselves can write to their subcollections.
-        // This includes comments, transactions, etc.
+        // This includes transactions, recaps, etc.
         allow write: if request.auth != null && request.auth.uid == userId;
 
          match /comments/{commentId} {
-            // A user can read/write comments if they have read access to the parent recap's user document.
-             allow read, write: if request.auth != null && (
-              // The user is the owner of the data
-              userId == request.auth.uid ||
-              // The user is the manager of the data owner
-              (exists(/databases/$(database)/documents/users/$(userId)) && 
-               get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid)
+            // A PATRON can write a comment on a recap of a user they manage.
+            // A user can write a comment on their own recap.
+             allow write: if request.auth != null && (
+               (
+                  get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid &&
+                  get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON'
+               ) || 
+                request.auth.uid == userId
+             );
+              
+             allow read: if request.auth != null && (
+                request.auth.uid == userId ||
+                (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
+                get(/databases/$(database)/documents/users/$(userId)).data.managerId == request.auth.uid)
             );
         }
       }
