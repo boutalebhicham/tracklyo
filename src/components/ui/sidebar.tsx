@@ -214,11 +214,12 @@ const SidebarTrigger = React.forwardRef<
   const child = children ? React.Children.only(children) : null;
   
   if (child) {
-    return React.cloneElement(child as React.ReactElement, {
+    const childElement = child as React.ReactElement<any>;
+    return React.cloneElement(childElement, {
       ref,
-      className: cn(className, (child as React.ReactElement).props.className),
+      className: cn(className, childElement.props.className),
       onClick: (e: React.MouseEvent<Element>) => {
-        (child as React.ReactElement).props.onClick?.(e);
+        childElement.props.onClick?.(e);
         if (!e.defaultPrevented) {
           toggleSidebar();
         }
@@ -386,7 +387,7 @@ const SidebarMenuButton = React.forwardRef<
           hidden={open || isMobile}
           {...tooltip}
         >
-          {props.children}
+          {tooltip.children}
         </TooltipContent>
       </Tooltip>
     )

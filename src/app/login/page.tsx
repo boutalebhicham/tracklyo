@@ -11,9 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Logo from '@/components/app/logo';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -61,25 +60,25 @@ export default function LoginPage() {
       });
   };
 
-  const handleRegister = (data: RegisterFormData) => {
+  const handleRegister = async (data: RegisterFormData) => {
     setError(null);
-    createUserWithEmailAndPassword(auth, data.email, data.password)
-      .then(userCredential => {
-        const user = userCredential.user;
-        const userDocRef = doc(firestore, 'users', user.uid);
-        // For now, new users are always PATRONs. RESPONSABLEs are created by PATRONs.
-        setDocumentNonBlocking(userDocRef, {
-          id: user.uid,
-          name: data.name,
-          email: data.email,
-          role: 'PATRON', 
-          avatar: `https://picsum.photos/seed/${user.uid}/100/100`,
-          phoneNumber: '',
-        }, { merge: true });
-      })
-      .catch((e: any) => {
-        setError(getFirebaseErrorMessage(e.code));
-      });
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
+      const userDocRef = doc(firestore, 'users', user.uid);
+      // For now, new users are always PATRONs. RESPONSABLEs are created by PATRONs.
+      // IMPORTANT: We must wait for the document to be created before Firebase can read it
+      await setDoc(userDocRef, {
+        id: user.uid,
+        name: data.name,
+        email: data.email,
+        role: 'PATRON',
+        avatar: `https://picsum.photos/seed/${user.uid}/100/100`,
+        phoneNumber: '',
+      }, { merge: true });
+    } catch (e: any) {
+      setError(getFirebaseErrorMessage(e.code));
+    }
   };
 
   const getFirebaseErrorMessage = (errorCode: string) => {

@@ -45,6 +45,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!isUserLoading && !authUser) {
+      // Reset viewedUserId when user logs out to prevent permission errors
+      setViewedUserId(null);
       router.push('/login');
     }
   }, [authUser, isUserLoading, router]);
@@ -67,8 +69,10 @@ export default function Home() {
   }, [firestore, authUser, loggedInUserData]);
   const { data: collaborators, isLoading: areCollaboratorsLoading } = useCollection<User>(collaboratorsQuery);
 
-  const handleLogout = () => {
-    signOut(auth);
+  const handleLogout = async () => {
+    // Reset state before logout to prevent permission errors
+    setViewedUserId(null);
+    await signOut(auth);
     router.push('/login');
   };
 
@@ -170,6 +174,11 @@ export default function Home() {
         <p>Chargement de votre espace de travail...</p>
       </div>
     );
+  }
+
+  // If user is not authenticated, don't render anything (will redirect to login)
+  if (!authUser) {
+    return null;
   }
 
   const renderContent = () => {

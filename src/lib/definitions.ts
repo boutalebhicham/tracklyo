@@ -64,3 +64,20 @@ export interface DocumentFile {
   date: string;
   size: string; // e.g., '2.5MB'
 }
+
+// Alias for compatibility
+export type Document = DocumentFile;
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  authorId: string;
+  title: string;
+  date: string;
+  description?: string;
+}
