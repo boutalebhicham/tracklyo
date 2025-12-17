@@ -39,7 +39,7 @@ export default function Home() {
 
   // Set the initial user to view once authenticated
   useEffect(() => {
-    if (authUser && !viewedUserId) {
+    if (authUser?.uid && !viewedUserId) {
       setViewedUserId(authUser.uid);
     }
   }, [authUser, viewedUserId]);
