@@ -37,12 +37,11 @@ export default function Home() {
   const [modal, setModal] = useState<string | null>(null);
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
 
-  // Set the initial user to view once authenticated
   useEffect(() => {
-    if (authUser?.uid && !viewedUserId) {
+    if (!isUserLoading && authUser && !viewedUserId) {
       setViewedUserId(authUser.uid);
     }
-  }, [authUser, viewedUserId]);
+  }, [authUser, isUserLoading, viewedUserId]);
 
   useEffect(() => {
     if (!isUserLoading && !authUser) {
@@ -50,23 +49,20 @@ export default function Home() {
     }
   }, [authUser, isUserLoading, router]);
 
-  // Data for the logged-in user (manager)
   const loggedInUserDocRef = useMemoFirebase(() => {
     if (!authUser?.uid) return null;
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
   const { data: loggedInUserData, isLoading: isPatronLoading } = useDoc<User>(loggedInUserDocRef);
 
-  // Data for the currently viewed user (can be manager or collaborator)
   const viewedUserDocRef = useMemoFirebase(() => {
     if (!viewedUserId) return null;
     return doc(firestore, 'users', viewedUserId);
   }, [firestore, viewedUserId]);
   const { data: viewedUserData, isLoading: isViewedUserLoading } = useDoc<User>(viewedUserDocRef);
 
-  // Get collaborators only if the logged-in user is a PATRON
   const collaboratorsQuery = useMemoFirebase(() => {
-    if (!authUser?.uid || !loggedInUserData || loggedInUserData.role !== 'PATRON') return null;
+    if (!authUser?.uid || loggedInUserData?.role !== 'PATRON') return null;
     return query(collection(firestore, 'users'), where('managerId', '==', authUser.uid));
   }, [firestore, authUser, loggedInUserData]);
   const { data: collaborators, isLoading: areCollaboratorsLoading } = useCollection<User>(collaboratorsQuery);
@@ -170,9 +166,9 @@ export default function Home() {
 
   if (isUserLoading) {
     return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
-            <p>Chargement de votre espace de travail...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <p>Chargement de votre espace de travail...</p>
+      </div>
     );
   }
 
@@ -211,7 +207,7 @@ export default function Home() {
           />
         )}
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
-           {isMobile && loggedInUserData && (
+           {isMobile && (
             <AppMobileHeader 
               loggedInUser={loggedInUserData}
               collaborators={collaborators || []}
@@ -234,7 +230,7 @@ export default function Home() {
       {viewedUserData && <WhatsAppFab phoneNumber={viewedUserData.phoneNumber} />}
       
       <PaywallModal isOpen={modal === 'paywall'} onClose={() => setModal(null)} />
-      {loggedInUserData && <AddUserModal isOpen={modal === 'addUser'} onClose={() => setModal(null)} onAddUser={handleAddUser} />}
+      <AddUserModal isOpen={modal === 'addUser'} onClose={() => setModal(null)} onAddUser={handleAddUser} />
       {viewedUserId && loggedInUserData && (
         <>
           <AddTransactionModal 
