@@ -16,7 +16,6 @@ import { useFirestore } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Logo from '@/components/app/logo';
 import { AnimatePresence, motion } from 'framer-motion';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Adresse email invalide' }),
@@ -54,44 +53,42 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleLogin = async (data: LoginFormData) => {
+  const handleLogin = (data: LoginFormData) => {
     setError(null);
-    try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-      router.push('/');
-    } catch (e: any) {
-      setError(getFirebaseErrorMessage(e.code));
-    }
+    signInWithEmailAndPassword(auth, data.email, data.password)
+      .catch((e: any) => {
+        setError(getFirebaseErrorMessage(e.code));
+      });
   };
 
-  const handleRegister = async (data: RegisterFormData) => {
+  const handleRegister = (data: RegisterFormData) => {
     setError(null);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      const user = userCredential.user;
-      
-      const userDocRef = doc(firestore, 'users', user.uid);
-      // For now, new users are always PATRONs. RESPONSABLEs are created by PATRONs.
-      setDocumentNonBlocking(userDocRef, {
-        id: user.uid,
-        name: data.name,
-        email: data.email,
-        role: 'PATRON', 
-        avatar: `https://picsum.photos/seed/${user.uid}/100/100`,
-        phoneNumber: '',
-      }, { merge: true });
-      
-      router.push('/');
-    } catch (e: any) {
-      setError(getFirebaseErrorMessage(e.code));
-    }
+    createUserWithEmailAndPassword(auth, data.email, data.password)
+      .then(userCredential => {
+        const user = userCredential.user;
+        const userDocRef = doc(firestore, 'users', user.uid);
+        // For now, new users are always PATRONs. RESPONSABLEs are created by PATRONs.
+        setDocumentNonBlocking(userDocRef, {
+          id: user.uid,
+          name: data.name,
+          email: data.email,
+          role: 'PATRON', 
+          avatar: `https://picsum.photos/seed/${user.uid}/100/100`,
+          phoneNumber: '',
+        }, { merge: true });
+      })
+      .catch((e: any) => {
+        setError(getFirebaseErrorMessage(e.code));
+      });
   };
 
   const getFirebaseErrorMessage = (errorCode: string) => {
     switch (errorCode) {
       case 'auth/invalid-email': return 'Adresse email invalide.';
       case 'auth/user-not-found':
-      case 'auth/wrong-password': return 'Email ou mot de passe incorrect.';
+      case 'auth/wrong-password': 
+      case 'auth/invalid-credential':
+        return 'Email ou mot de passe incorrect.';
       case 'auth/email-already-in-use': return 'Cette adresse email est déjà utilisée.';
       case 'auth/weak-password': return 'Le mot de passe est trop faible.';
       default: return 'Une erreur est survenue. Veuillez réessayer.';
@@ -209,3 +206,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
