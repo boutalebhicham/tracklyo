@@ -51,11 +51,17 @@ export default function Home() {
   }, [authUser, isUserLoading, router]);
 
   // Data for the logged-in user (manager)
-  const loggedInUserDocRef = useMemoFirebase(() => authUser?.uid ? doc(firestore, 'users', authUser.uid) : null, [authUser, firestore]);
+  const loggedInUserDocRef = useMemoFirebase(() => {
+    if (!authUser?.uid) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
   const { data: loggedInUserData, isLoading: isPatronLoading } = useDoc<User>(loggedInUserDocRef);
 
   // Data for the currently viewed user (can be manager or collaborator)
-  const viewedUserDocRef = useMemoFirebase(() => viewedUserId ? doc(firestore, 'users', viewedUserId) : null, [viewedUserId, firestore]);
+  const viewedUserDocRef = useMemoFirebase(() => {
+    if (!viewedUserId) return null;
+    return doc(firestore, 'users', viewedUserId);
+  }, [firestore, viewedUserId]);
   const { data: viewedUserData, isLoading: isViewedUserLoading } = useDoc<User>(viewedUserDocRef);
 
   // Get collaborators only if the logged-in user is a PATRON
@@ -162,7 +168,7 @@ export default function Home() {
     return userList;
   }, [loggedInUserData, collaborators]);
 
-  if (isUserLoading || !authUser) {
+  if (isUserLoading) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <p>Chargement de votre espace de travail...</p>
@@ -171,14 +177,6 @@ export default function Home() {
   }
 
   const renderContent = () => {
-    if (!viewedUserId) {
-        return (
-             <div className="flex items-center justify-center h-96">
-                <p>Sélectionnez un utilisateur pour voir les détails.</p>
-            </div>
-        )
-    }
-
     switch(activeView) {
       case 'accueil':
         return <DashboardView viewedUserId={viewedUserId} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
