@@ -51,8 +51,9 @@ export default function Home() {
         setViewedUserId(null);
         router.push('/login');
       } else {
-        // If there is a user but no viewedUserId is set, set it to the logged-in user's ID
-        if (!viewedUserId) {
+        // ALWAYS reset viewedUserId to the current authenticated user's ID
+        // This ensures collaborators see their own dashboard, not the patron's
+        if (viewedUserId !== authUser.uid) {
           setViewedUserId(authUser.uid);
         }
       }

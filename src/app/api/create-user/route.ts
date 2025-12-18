@@ -40,9 +40,9 @@ export async function POST(request: Request) {
       displayName: name,
     });
 
-    // Create the user profile in Firestore
+    // Create the user profile in Firestore with retry logic
     const userDocRef = db.collection('users').doc(userRecord.uid);
-    await userDocRef.set({
+    const userData = {
       id: userRecord.uid,
       name,
       email,
@@ -50,7 +50,28 @@ export async function POST(request: Request) {
       managerId: managerUid,
       avatar: `https://picsum.photos/seed/${userRecord.uid}/100/100`,
       phoneNumber: '',
-    });
+    };
+
+    // Retry up to 3 times to ensure document creation
+    let retries = 3;
+    let docCreated = false;
+
+    while (retries > 0 && !docCreated) {
+      try {
+        await userDocRef.set(userData);
+        docCreated = true;
+      } catch (docError) {
+        retries--;
+        if (retries === 0) {
+          console.error('[create-user] Failed to create user document after retries:', docError);
+          // If document creation fails, delete the auth user to maintain consistency
+          await auth.deleteUser(userRecord.uid);
+          throw new Error('Impossible de créer le profil du collaborateur. Veuillez réessayer.');
+        }
+        // Wait 1 second before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
 
     return NextResponse.json({ uid: userRecord.uid }, { status: 201 });
 
