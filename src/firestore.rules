@@ -18,14 +18,15 @@ service cloud.firestore {
       // Allow reading own user document or if user is a manager of this user
       allow get: if isOwner(userId) || isManagerOf(userId);
 
-      // Allow PATRON to query/list users (they can only see their collaborators via where clause)
-      allow list: if request.auth != null &&
-                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON';
+      // Allow authenticated users to query/list users
+      // PATRON users will use where('managerId', '==', uid) to see their collaborators
+      // Users can see their own document in list queries
+      allow list: if request.auth != null;
 
       // Allow updating/deleting own user document
       allow update, delete: if isOwner(userId);
 
-      // Allow creating new users (handled by Admin SDK in API)
+      // Allow creating new users (for signup flow and Admin SDK in API)
       allow create: if request.auth != null;
 
       match /{subcollection}/{docId} {
