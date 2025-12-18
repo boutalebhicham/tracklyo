@@ -16,11 +16,15 @@ import { cn } from '@/lib/utils'
 type MissionsViewProps = {
   viewedUserId: string | null
   onAddMission: () => void
+  userRole?: 'PATRON' | 'RESPONSABLE'
 }
 
-const MissionsView = ({ viewedUserId, onAddMission }: MissionsViewProps) => {
+const MissionsView = ({ viewedUserId, onAddMission, userRole }: MissionsViewProps) => {
   const [activeTab, setActiveTab] = useState<MissionType>('PERSONAL')
   const firestore = useFirestore()
+
+  // RESPONSABLE can only see PERSONAL missions
+  const isResponsable = userRole === 'RESPONSABLE'
 
   const missionsQuery = useMemoFirebase(
     () => viewedUserId
@@ -36,8 +40,12 @@ const MissionsView = ({ viewedUserId, onAddMission }: MissionsViewProps) => {
 
   const missions = useMemo(() => {
     if (!allMissions) return []
+    // RESPONSABLE can only see PERSONAL missions
+    if (isResponsable) {
+      return allMissions.filter(m => m.type === 'PERSONAL')
+    }
     return allMissions.filter(m => m.type === activeTab)
-  }, [allMissions, activeTab])
+  }, [allMissions, activeTab, isResponsable])
 
   const groupedMissions = useMemo(() => {
     if (!missions) return { TODO: [], IN_PROGRESS: [], DONE: [] }
@@ -206,24 +214,36 @@ const MissionsView = ({ viewedUserId, onAddMission }: MissionsViewProps) => {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MissionType)} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl">
-          <TabsTrigger value="PERSONAL" className="rounded-lg">
-            Personnel
-          </TabsTrigger>
-          <TabsTrigger value="SHARED" className="rounded-lg">
-            Collaborateur
-          </TabsTrigger>
-        </TabsList>
+      {/* RESPONSABLE can only see PERSONAL missions, no tabs needed */}
+      {!isResponsable && (
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MissionType)} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl">
+            <TabsTrigger value="PERSONAL" className="rounded-lg">
+              Personnel
+            </TabsTrigger>
+            <TabsTrigger value="SHARED" className="rounded-lg">
+              Collaborateur
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value={activeTab} className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <MissionColumn status="TODO" missions={groupedMissions.TODO} />
-            <MissionColumn status="IN_PROGRESS" missions={groupedMissions.IN_PROGRESS} />
-            <MissionColumn status="DONE" missions={groupedMissions.DONE} />
-          </div>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value={activeTab} className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <MissionColumn status="TODO" missions={groupedMissions.TODO} />
+              <MissionColumn status="IN_PROGRESS" missions={groupedMissions.IN_PROGRESS} />
+              <MissionColumn status="DONE" missions={groupedMissions.DONE} />
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* RESPONSABLE sees missions directly without tabs */}
+      {isResponsable && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <MissionColumn status="TODO" missions={groupedMissions.TODO} />
+          <MissionColumn status="IN_PROGRESS" missions={groupedMissions.IN_PROGRESS} />
+          <MissionColumn status="DONE" missions={groupedMissions.DONE} />
+        </div>
+      )}
     </div>
   )
 }

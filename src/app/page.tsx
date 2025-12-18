@@ -311,7 +311,7 @@ export default function Home() {
       case 'activite':
         return <ActivityView viewedUserId={viewedUserId} users={allUsersForActivity} onAddRecap={() => setModal('addRecap')} currentUser={loggedInUserData} />;
       case 'missions':
-        return <MissionsView viewedUserId={viewedUserId} onAddMission={() => setModal('addMission')} />;
+        return <MissionsView viewedUserId={viewedUserId} onAddMission={() => setModal('addMission')} userRole={viewedUserData?.role} />;
       case 'fichiers':
         return <FilesView viewedUserId={viewedUserId} onAddDocument={() => setModal('addDocument')} />;
       default:
