@@ -358,11 +358,6 @@ export default function Home() {
           <div className="p-4 sm:p-6 lg:p-8">
             <AppHeader
               user={isViewedUserLoading ? undefined : viewedUserData}
-              actions={
-                loggedInUserData?.role === 'PATRON' && viewedUserData && viewedUserId ? (
-                  <ExportButton user={viewedUserData} viewedUserId={viewedUserId} />
-                ) : null
-              }
             />
             <div className="mt-6">
               {renderContent()}

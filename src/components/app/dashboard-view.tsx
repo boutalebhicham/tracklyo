@@ -87,6 +87,7 @@ const DashboardView = ({ viewedUserId, onQuickAdd, setActiveView, setViewedUserI
   return (
     <PatronDashboard
       viewedUserId={viewedUserId}
+      user={user}
       collaborators={collaborators || []}
       onQuickAdd={onQuickAdd}
       setActiveView={setActiveView}

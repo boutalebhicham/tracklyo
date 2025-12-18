@@ -12,18 +12,20 @@ import { collection, query, orderBy, limit } from 'firebase/firestore'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import ActivityFeed from './activity-feed'
+import ExportButton from './export-button'
 
 const CashFlowChart = lazy(() => import('./cash-flow-chart'))
 
 type PatronDashboardProps = {
   viewedUserId: string | null
+  user: User
   collaborators: User[]
   onQuickAdd: (modal: 'addTransaction' | 'addUser') => void
   setActiveView: (view: string) => void
   setViewedUserId: (userId: string) => void
 }
 
-const PatronDashboard = ({ viewedUserId, collaborators, onQuickAdd, setActiveView, setViewedUserId }: PatronDashboardProps) => {
+const PatronDashboard = ({ viewedUserId, user, collaborators, onQuickAdd, setActiveView, setViewedUserId }: PatronDashboardProps) => {
   const firestore = useFirestore()
 
   const transactionsQuery = useMemoFirebase(
@@ -79,6 +81,15 @@ const PatronDashboard = ({ viewedUserId, collaborators, onQuickAdd, setActiveVie
 
   return (
     <div className="space-y-6">
+      {/* Header with Export Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold">Tableau de bord</h2>
+          <p className="text-muted-foreground">Vue d'ensemble de votre activité</p>
+        </div>
+        {viewedUserId && <ExportButton user={user} viewedUserId={viewedUserId} />}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Balance Card */}
         <Card className="dark bg-gray-900 text-white rounded-4xl shadow-2xl shadow-primary/10 flex flex-col">
