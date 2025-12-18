@@ -2,13 +2,11 @@
 
 "use client"
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, lazy, Suspense } from 'react'
 import type { Transaction, Currency } from '@/lib/definitions'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableRow, TableHead, TableHeader } from '@/components/ui/table'
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
 import { calculateBalance, convertCurrency, formatCurrency, formatCurrencyCompact } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -16,6 +14,9 @@ import { Plus, ArrowDown, ArrowUp, Wallet, Clock, MoreHorizontal } from 'lucide-
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { collection, query, orderBy } from 'firebase/firestore'
 import { Skeleton } from '../ui/skeleton'
+
+// Lazy load the chart component to improve initial load performance
+const CashFlowChart = lazy(() => import('./cash-flow-chart'))
 
 type FinancesViewProps = {
   viewedUserId: string | null
@@ -42,7 +43,7 @@ const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewPr
   const chartData = useMemo(() => {
     if (!transactions) return [];
     const monthlyData: { [key: string]: { budget: number, expenses: number } } = {}
-    
+
     transactions.forEach(tx => {
       const month = format(parseISO(tx.date), 'MMM', { locale: fr })
       if (!monthlyData[month]) {
@@ -62,11 +63,6 @@ const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewPr
       expenses: monthlyData[month].expenses
     })).reverse()
   }, [transactions, currentCurrency])
-
-  const chartConfig = {
-    budget: { label: "Budget", color: "hsl(var(--chart-1))" },
-    expenses: { label: "Dépenses", color: "hsl(var(--chart-2))" },
-  }
 
   const handleCurrencyChange = (currency: Currency) => {
     setCurrentCurrency(currency);
@@ -157,16 +153,9 @@ const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewPr
             <Button variant="ghost" className="rounded-full text-sm font-normal">Vue Globale</Button>
           </CardHeader>
           <CardContent>
-             <ChartContainer config={chartConfig} className="h-[250px] w-full">
-              <BarChart data={chartData} margin={{ top: 20, right: 20, left: -20, bottom: 0 }}>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000}k`} tickMargin={8} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="budget" fill="var(--color-budget)" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="expenses" fill="var(--color-expenses)" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ChartContainer>
+            <Suspense fallback={<Skeleton className="h-[250px] w-full rounded-xl" />}>
+              <CashFlowChart data={chartData} currency={currentCurrency} />
+            </Suspense>
           </CardContent>
         </Card>
       </div>
