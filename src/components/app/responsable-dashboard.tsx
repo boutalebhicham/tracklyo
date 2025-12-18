@@ -47,7 +47,10 @@ const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: Respo
 
   const todayMissions = useMemo(() => {
     if (!allMissions) return []
-    return allMissions.filter(m => m.status !== 'DONE').slice(0, 5)
+    // RESPONSABLE only sees their PERSONAL missions (not SHARED ones)
+    return allMissions
+      .filter(m => m.status !== 'DONE' && m.type === 'PERSONAL')
+      .slice(0, 5)
   }, [allMissions])
 
   if (isLoading) {
@@ -97,6 +100,7 @@ const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: Respo
               <Plus size={20} className="mr-2" />
               <span className="font-semibold">Dépense</span>
             </Button>
+            {/* Rapport d'activité - opens AddRecapModal (not related to finances) */}
             <Button
               onClick={() => onQuickAdd('addRecap')}
               className="h-14 rounded-2xl bg-white/20 hover:bg-white/30 text-white"
@@ -120,7 +124,7 @@ const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: Respo
                 <CheckSquare size={24} className="text-blue-600 dark:text-blue-400" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-lg">Mes Missions</p>
+                <p className="font-semibold text-lg">Mes Missions Perso</p>
                 <p className="text-sm text-muted-foreground">
                   {pendingMissions.length} à faire • {inProgressMissions.length} en cours
                 </p>
@@ -153,9 +157,9 @@ const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: Respo
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckSquare size={20} />
-              Missions du Jour
+              Mes Missions Personnelles
             </CardTitle>
-            <CardDescription>Vos tâches en cours et à faire</CardDescription>
+            <CardDescription>Vos tâches personnelles en cours et à faire</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
