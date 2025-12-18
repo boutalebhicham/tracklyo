@@ -48,9 +48,12 @@ const DashboardView = ({ viewedUserId, onQuickAdd, setActiveView, setViewedUserI
   }
 
   if (!user) {
+    console.error('[DashboardView] User not found. viewedUserId:', viewedUserId)
     return (
       <div className="text-center py-16">
         <p>Impossible de charger les données de l'utilisateur.</p>
+        <p className="text-sm text-muted-foreground mt-2">ID: {viewedUserId}</p>
+        <p className="text-sm text-muted-foreground">Vérifiez que le document utilisateur existe dans Firestore.</p>
       </div>
     )
   }
