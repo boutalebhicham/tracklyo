@@ -16,6 +16,7 @@ export interface User {
   avatar: string;
   phoneNumber: string;
   managerId?: string; // ID of the PATRON
+  fcmToken?: string; // Firebase Cloud Messaging token for push notifications
 }
 
 export type AddUserForm = Omit<User, 'id' | 'role' | 'avatar' | 'managerId' | 'phoneNumber'> & {
@@ -95,4 +96,23 @@ export interface Mission {
   type: MissionType;
   createdAt: string;
   updatedAt: string;
+}
+
+export type NotificationType =
+  | 'EXPENSE_ADDED'
+  | 'RECAP_ADDED'
+  | 'MISSION_COMPLETED'
+  | 'MISSION_ASSIGNED'
+  | 'BUDGET_ADDED'
+  | 'MISSION_REMINDER';
+
+export interface Notification {
+  id: string;
+  userId: string; // Recipient
+  type: NotificationType;
+  title: string;
+  body: string;
+  read: boolean;
+  createdAt: string;
+  data?: Record<string, any>; // Additional data for the notification
 }

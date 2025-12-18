@@ -24,6 +24,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import AppMobileHeader from '@/components/app/app-mobile-header';
 import AppBottomNav from '@/components/app/app-bottom-nav';
 import { Skeleton } from '@/components/ui/skeleton';
+import NotificationHandler from '@/components/app/notification-handler';
 
 export default function Home() {
   const { user: authUser, isUserLoading } = useUser();
@@ -299,6 +300,7 @@ export default function Home() {
           />
         </>
       )}
+      <NotificationHandler />
     </SidebarProvider>
   );
 }
