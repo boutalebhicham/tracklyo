@@ -47,6 +47,8 @@ export default function Home() {
     if (!isUserLoading) {
       // If there is no user, redirect to login
       if (!authUser) {
+        // Clear viewedUserId when user logs out to prevent permission errors
+        setViewedUserId(null);
         router.push('/login');
       } else {
         // If there is a user but no viewedUserId is set, set it to the logged-in user's ID
@@ -137,6 +139,8 @@ export default function Home() {
 
   const handleLogout = async () => {
     try {
+      // Clear session storage to remove user doc creation flag
+      sessionStorage.clear();
       await signOut(auth);
       // The useEffect hook will handle redirection to /login
     } catch (error) {
