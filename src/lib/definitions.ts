@@ -2,6 +2,7 @@
 
 export type Currency = 'EUR' | 'USD' | 'XOF';
 export type TransactionType = 'BUDGET_ADD' | 'EXPENSE';
+export type PaymentMethod = 'CASH' | 'CARD' | 'WAVE' | 'ORANGE_MONEY';
 export type RecapType = 'DAILY' | 'WEEKLY';
 export type UserRole = 'PATRON' | 'RESPONSABLE';
 
@@ -27,6 +28,7 @@ export interface Transaction {
   date: string;
   type: TransactionType;
   currency: Currency;
+  paymentMethod?: PaymentMethod;
 }
 
 export interface Recap {

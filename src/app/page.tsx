@@ -70,10 +70,16 @@ export default function Home() {
   const { data: collaborators, isLoading: areCollaboratorsLoading } = useCollection<User>(collaboratorsQuery);
 
   const handleLogout = async () => {
-    // Reset state before logout to prevent permission errors
-    setViewedUserId(null);
-    await signOut(auth);
-    router.push('/login');
+    try {
+      // Reset state before logout to prevent permission errors
+      setViewedUserId(null);
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if signOut fails
+      router.push('/login');
+    }
   };
 
   const handleAddCollaborator = () => {
@@ -118,10 +124,12 @@ export default function Home() {
 
   const handleAddUser = async (newUser: AddUserForm) => {
     if (!authUser) return;
-    setModal(null);
 
     try {
+      console.log('[handleAddUser] Starting user creation...');
       const idToken = await authUser.getIdToken();
+      console.log('[handleAddUser] Got ID token, calling API...');
+
       const response = await fetch('/api/create-user', {
         method: 'POST',
         headers: {
@@ -135,18 +143,25 @@ export default function Home() {
         })
       });
 
+      console.log('[handleAddUser] API response received:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "La création de l'utilisateur a échoué.");
       }
-      
+
       await response.json();
+      console.log('[handleAddUser] User created successfully');
 
       toast({ title: "Collaborateur ajouté !", description: `${newUser.name} peut maintenant se connecter.` });
+      console.log('[handleAddUser] Toast shown, closing modal...');
+      setModal(null);
+      console.log('[handleAddUser] Modal closed, function complete');
 
     } catch (error: any) {
-      console.error("Error creating collaborator:", error);
+      console.error("[handleAddUser] Error creating collaborator:", error);
       toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de créer le collaborateur." });
+      setModal(null);
     }
   }
 

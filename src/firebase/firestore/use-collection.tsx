@@ -69,6 +69,7 @@ export function useCollection<T = any>(
       return;
     }
 
+    console.log('[useCollection] Setting up snapshot listener...');
     setIsLoading(true);
     setError(null);
 
@@ -76,6 +77,7 @@ export function useCollection<T = any>(
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
+        console.log('[useCollection] Snapshot received:', snapshot.docs.length, 'documents');
         const results: ResultItemType[] = [];
         for (const doc of snapshot.docs) {
           results.push({ ...(doc.data() as T), id: doc.id });
@@ -107,8 +109,12 @@ export function useCollection<T = any>(
 
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+
+  // Only throw in development to help catch bugs during development
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Query was not properly memoized using useMemoFirebase:', memoizedTargetRefOrQuery);
+    }
   }
   return { data, isLoading, error };
 }

@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { User, Currency, Transaction, Recap, Event as CalendarEvent, RecapType, TransactionType, DocumentFile, AddUserForm } from '@/lib/definitions';
+import type { User, Currency, Transaction, Recap, Event as CalendarEvent, RecapType, TransactionType, PaymentMethod, DocumentFile, AddUserForm } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Image as ImageIcon, Video, Mic, Upload, Camera } from 'lucide-react';
@@ -92,14 +92,28 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
   const [reason, setReason] = useState('');
   const [currency, setCurrency] = useState<Currency>('EUR');
   const [transactionType, setTransactionType] = useState<TransactionType>('EXPENSE');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [error, setError] = useState('');
 
   const firestore = useFirestore();
   const transactionsQuery = useMemoFirebase(() => authorId ? collection(firestore, 'users', authorId, 'transactions') : null, [authorId, firestore]);
   const { data: transactions } = useCollection<Transaction>(transactionsQuery);
 
+  // Force EXPENSE type for RESPONSABLE users
+  React.useEffect(() => {
+    if (viewAs === 'RESPONSABLE') {
+      setTransactionType('EXPENSE');
+    }
+  }, [viewAs]);
+
   const handleSubmit = () => {
     if (!transactions) return;
+
+    // Security check: RESPONSABLE can only create EXPENSE
+    if (viewAs === 'RESPONSABLE' && transactionType !== 'EXPENSE') {
+      setError('Vous ne pouvez créer que des dépenses.');
+      return;
+    }
 
     const numericAmount = parseFloat(amount);
     if (!numericAmount || !reason) {
@@ -116,9 +130,22 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
       }
     }
     
-    onAddTransaction({ amount: numericAmount, reason, currency, type: transactionType }, transactions);
+    const transaction: Omit<Transaction, 'id' | 'authorId' | 'date'> = {
+      amount: numericAmount,
+      reason,
+      currency,
+      type: transactionType
+    };
+
+    // Add paymentMethod only for expenses
+    if (transactionType === 'EXPENSE') {
+      transaction.paymentMethod = paymentMethod;
+    }
+
+    onAddTransaction(transaction, transactions);
     setAmount('');
     setReason('');
+    setPaymentMethod('CASH');
     setError('');
     onClose();
   };
@@ -128,23 +155,25 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
       <GlassDialogContent>
         <DialogHeader><DialogTitle>Nouvelle Transaction</DialogTitle></DialogHeader>
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Type de transaction</Label>
-            <RadioGroup value={transactionType} onValueChange={(v: any) => setTransactionType(v)} className="grid grid-cols-2 gap-4">
-              <div>
-                <RadioGroupItem value="BUDGET_ADD" id="r-budget" className="peer sr-only" />
-                <Label htmlFor="r-budget" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                  Ajout de budget
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem value="EXPENSE" id="r-expense" className="peer sr-only" />
-                <Label htmlFor="r-expense" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                  Dépense
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
+          {viewAs === 'PATRON' && (
+            <div className="space-y-2">
+              <Label>Type de transaction</Label>
+              <RadioGroup value={transactionType} onValueChange={(v: any) => setTransactionType(v)} className="grid grid-cols-2 gap-4">
+                <div>
+                  <RadioGroupItem value="BUDGET_ADD" id="r-budget" className="peer sr-only" />
+                  <Label htmlFor="r-budget" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                    Ajout de budget
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="EXPENSE" id="r-expense" className="peer sr-only" />
+                  <Label htmlFor="r-expense" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                    Dépense
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2"><Label htmlFor="amount">Montant</Label><Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-xl" /></div>
             <div className="space-y-2"><Label>Devise</Label>
@@ -155,6 +184,20 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
             </div>
           </div>
           <div className="space-y-2"><Label htmlFor="reason">Motif</Label><Input id="reason" value={reason} onChange={e => setReason(e.target.value)} className="rounded-xl" /></div>
+          {transactionType === 'EXPENSE' && (
+            <div className="space-y-2">
+              <Label>Méthode de paiement</Label>
+              <Select value={paymentMethod} onValueChange={(v: PaymentMethod) => setPaymentMethod(v)}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent className="rounded-xl backdrop-blur-sm bg-popover/80">
+                  <SelectItem value="CASH">Cash</SelectItem>
+                  <SelectItem value="CARD">Carte bancaire</SelectItem>
+                  <SelectItem value="WAVE">Wave</SelectItem>
+                  <SelectItem value="ORANGE_MONEY">Orange Money</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           {error && <Alert variant="destructive" className="rounded-xl"><AlertDescription>{error}</AlertDescription></Alert>}
         </div>
         <DialogFooter><Button onClick={handleSubmit} className="rounded-xl">Enregistrer</Button></DialogFooter>

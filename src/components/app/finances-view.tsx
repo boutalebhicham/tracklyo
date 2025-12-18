@@ -110,10 +110,12 @@ const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewPr
                 ))}
             </div>
             <div className="flex items-center gap-2">
-                <Button onClick={onAddTransaction} className="flex-1 rounded-xl gap-2 h-10 bg-primary/20 text-primary hover:bg-primary/30">
-                    <Plus size={16} />
-                    <span>Budget</span>
-                </Button>
+                {viewAs === 'PATRON' && (
+                  <Button onClick={onAddTransaction} className="flex-1 rounded-xl gap-2 h-10 bg-primary/20 text-primary hover:bg-primary/30">
+                      <Plus size={16} />
+                      <span>Budget</span>
+                  </Button>
+                )}
                 <Button onClick={onAddTransaction} variant="destructive" className="flex-1 rounded-xl gap-2 h-10">
                     <Plus size={16} />
                     <span>Dépense</span>
@@ -180,21 +182,32 @@ const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewPr
                 <TableRow>
                   <TableHead>Raison</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead className="hidden sm:table-cell">Paiement</TableHead>
                   <TableHead className="text-right">Montant</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map(tx => (
+                {transactions.map(tx => {
+                  const paymentMethodLabels = {
+                    'CASH': 'Cash',
+                    'CARD': 'Carte',
+                    'WAVE': 'Wave',
+                    'ORANGE_MONEY': 'Orange Money'
+                  };
+                  return (
                   <TableRow key={tx.id}>
                     <TableCell className="font-medium">{tx.reason}</TableCell>
                     <TableCell className="text-muted-foreground">{format(parseISO(tx.date), 'd MMM yyyy, HH:mm', { locale: fr })}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                      {tx.type === 'EXPENSE' && tx.paymentMethod ? paymentMethodLabels[tx.paymentMethod] : '-'}
+                    </TableCell>
                     <TableCell className={`text-right font-semibold ${tx.type === 'BUDGET_ADD' ? 'text-green-500' : 'text-red-500'}`}>
                       {tx.type === 'BUDGET_ADD' ? '+' : '-'} {formatCurrency(tx.amount, tx.currency)}
                     </TableCell>
                     <TableCell><Button variant="ghost" size="icon" className="rounded-full h-8 w-8"><MoreHorizontal size={16}/></Button></TableCell>
                   </TableRow>
-                ))}
+                )})}
               </TableBody>
             </Table>
           </CardContent>
