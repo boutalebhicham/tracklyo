@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { collection, query, where, doc, setDoc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
 import type { User, AddUserForm, Transaction, Recap, Event, Document as DocumentFile, Mission } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
@@ -63,6 +63,48 @@ export default function Home() {
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
   const { data: loggedInUserData, isLoading: isPatronLoading } = useDoc<User>(loggedInUserDocRef);
+
+  // FALLBACK: Create user document if missing (safety net for signup issues)
+  useEffect(() => {
+    const createMissingUserDoc = async () => {
+      if (!authUser || isPatronLoading) return;
+
+      // If user is authenticated but document doesn't exist, create it
+      if (authUser && !isPatronLoading && !loggedInUserData) {
+        console.warn('[Home] User document missing, creating fallback document for:', authUser.uid);
+        try {
+          const userDocRef = doc(firestore, 'users', authUser.uid);
+          await setDoc(userDocRef, {
+            id: authUser.uid,
+            name: authUser.displayName || authUser.email?.split('@')[0] || 'Utilisateur',
+            email: authUser.email || '',
+            role: 'PATRON',
+            avatar: authUser.photoURL || `https://picsum.photos/seed/${authUser.uid}/100/100`,
+            phoneNumber: '',
+          }, { merge: true });
+
+          toast({
+            title: 'Compte créé',
+            description: 'Votre profil a été configuré avec succès.',
+          });
+
+          // Wait a bit for Firestore to index, then reload
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } catch (error) {
+          console.error('[Home] Failed to create fallback user document:', error);
+          toast({
+            variant: 'destructive',
+            title: 'Erreur de profil',
+            description: 'Impossible de créer votre profil. Veuillez vous reconnecter.',
+          });
+        }
+      }
+    };
+
+    createMissingUserDoc();
+  }, [authUser, isPatronLoading, loggedInUserData, firestore, toast]);
 
   const viewedUserDocRef = useMemoFirebase(() => {
     if (!viewedUserId) return null;

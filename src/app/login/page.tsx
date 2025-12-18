@@ -64,20 +64,46 @@ export default function LoginPage() {
   const handleRegister = async (data: RegisterFormData) => {
     setError(null);
     try {
+      // Step 1: Create Firebase Auth user
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
+
+      // Step 2: Create Firestore document with retry logic
       const userDocRef = doc(firestore, 'users', user.uid);
-      // IMPORTANT: We must wait for the document to be created before Firebase can read it
-      await setDoc(userDocRef, {
+      const userData = {
         id: user.uid,
         name: data.name,
         email: data.email,
         role: 'PATRON',
         avatar: `https://picsum.photos/seed/${user.uid}/100/100`,
         phoneNumber: '',
-      }, { merge: true });
+      };
+
+      // Retry up to 3 times to ensure document creation
+      let retries = 3;
+      let docCreated = false;
+
+      while (retries > 0 && !docCreated) {
+        try {
+          await setDoc(userDocRef, userData, { merge: true });
+          // Wait a moment to ensure Firestore indexes the document
+          await new Promise(resolve => setTimeout(resolve, 500));
+          docCreated = true;
+        } catch (docError: any) {
+          retries--;
+          if (retries === 0) {
+            console.error('[handleRegister] Failed to create user document after retries:', docError);
+            throw new Error('Impossible de créer votre profil. Veuillez réessayer.');
+          }
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      // Document created successfully - auth redirect will happen automatically via useEffect
     } catch (e: any) {
-      setError(getFirebaseErrorMessage(e.code));
+      console.error('[handleRegister] Registration error:', e);
+      setError(e.message || getFirebaseErrorMessage(e.code));
     }
   };
 
