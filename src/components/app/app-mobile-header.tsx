@@ -29,16 +29,24 @@ const AppMobileHeader = (props: AppMobileHeaderProps) => {
     );
   }
 
+  const isPatron = props.loggedInUser.role === 'PATRON';
+
   return (
     <header className="md:hidden sticky top-0 bg-background/80 backdrop-blur-lg z-10 p-2 border-b">
       <div className="flex items-center justify-between">
-        <CollaboratorSwitcher 
-          patron={props.loggedInUser}
-          collaborators={props.collaborators}
-          activeCollaboratorId={props.viewedUserId}
-          onCollaboratorChange={props.setViewedUserId}
-          onAddCollaborator={props.onAddCollaborator}
-        />
+        {isPatron ? (
+          <CollaboratorSwitcher
+            patron={props.loggedInUser}
+            collaborators={props.collaborators}
+            activeCollaboratorId={props.viewedUserId}
+            onCollaboratorChange={props.setViewedUserId}
+            onAddCollaborator={props.onAddCollaborator}
+          />
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{props.loggedInUser.name}</span>
+          </div>
+        )}
         <Button onClick={props.onLogout} variant="ghost" size="icon" className="rounded-full">
             <LogOut size={20} />
         </Button>

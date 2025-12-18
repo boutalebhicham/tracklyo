@@ -36,6 +36,9 @@ const CollaboratorSwitcher: React.FC<CollaboratorSwitcherProps> = ({
   const activeUser = allUsers.find(u => u.id === activeCollaboratorId);
   const isMobile = useIsMobile();
 
+  // Check if logged-in user is PATRON
+  const isPatron = patron.role === 'PATRON';
+
   // If activeUser is not yet available (e.g., during initial load),
   // render a placeholder or nothing to prevent crash.
   if (!activeUser) {
@@ -46,9 +49,11 @@ const CollaboratorSwitcher: React.FC<CollaboratorSwitcherProps> = ({
                     Suivi de :
                 </h3>
             )}
-            <Button onClick={onAddCollaborator} variant={isMobile ? "outline" : "ghost"} className="w-full h-12 justify-start p-2 rounded-xl text-left hover:bg-black/20 text-sidebar-foreground/80">
-                <Plus size={16} className="mr-2"/> Ajouter
-            </Button>
+            {isPatron && (
+              <Button onClick={onAddCollaborator} variant={isMobile ? "outline" : "ghost"} className="w-full h-12 justify-start p-2 rounded-xl text-left hover:bg-black/20 text-sidebar-foreground/80">
+                  <Plus size={16} className="mr-2"/> Ajouter
+              </Button>
+            )}
         </div>
     );
   }
@@ -119,10 +124,14 @@ const CollaboratorSwitcher: React.FC<CollaboratorSwitcherProps> = ({
                         )}
                     </DropdownMenuItem>
                 ))}
-                <DropdownMenuSeparator className={cn(isMobile ? "" : "bg-sidebar-foreground/20")}/>
-                <DropdownMenuItem onClick={onAddCollaborator} className={cn("flex items-center gap-3 p-2 rounded-lg cursor-pointer", isMobile ? "focus:bg-slate-100 dark:focus:bg-slate-800" : "hover:!bg-primary/20")}>
-                    <Plus size={16} /> Ajouter un collaborateur
-                </DropdownMenuItem>
+                {isPatron && (
+                  <>
+                    <DropdownMenuSeparator className={cn(isMobile ? "" : "bg-sidebar-foreground/20")}/>
+                    <DropdownMenuItem onClick={onAddCollaborator} className={cn("flex items-center gap-3 p-2 rounded-lg cursor-pointer", isMobile ? "focus:bg-slate-100 dark:focus:bg-slate-800" : "hover:!bg-primary/20")}>
+                        <Plus size={16} /> Ajouter un collaborateur
+                    </DropdownMenuItem>
+                  </>
+                )}
             </DropdownMenuContent>
         </DropdownMenu>
     </div>
