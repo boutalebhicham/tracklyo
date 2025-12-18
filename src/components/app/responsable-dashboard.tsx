@@ -9,7 +9,7 @@ import type { Transaction, Mission } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
 import { Skeleton } from '../ui/skeleton'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
-import { collection, query, where, orderBy, limit } from 'firebase/firestore'
+import { collection, query, orderBy, limit } from 'firebase/firestore'
 
 type ResponsableDashboardProps = {
   viewedUserId: string | null
@@ -30,15 +30,13 @@ const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: Respo
     () => viewedUserId
       ? query(
           collection(firestore, 'users', viewedUserId, 'missions'),
-          where('status', '!=', 'DONE'),
-          orderBy('status', 'asc'),
           orderBy('createdAt', 'desc'),
-          limit(5)
+          limit(10)
         )
       : null,
     [firestore, viewedUserId]
   )
-  const { data: todayMissions, isLoading: areMissionsLoading } = useCollection<Mission>(todayMissionsQuery)
+  const { data: allMissions, isLoading: areMissionsLoading } = useCollection<Mission>(todayMissionsQuery)
 
   const isLoading = areTransactionsLoading || areMissionsLoading
 
@@ -46,6 +44,11 @@ const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: Respo
     if (!transactions) return 0
     return transactions.reduce((acc, tx) => acc + (tx.type === 'BUDGET_ADD' ? tx.amount : -tx.amount), 0)
   }, [transactions])
+
+  const todayMissions = useMemo(() => {
+    if (!allMissions) return []
+    return allMissions.filter(m => m.status !== 'DONE').slice(0, 5)
+  }, [allMissions])
 
   if (isLoading) {
     return (
@@ -60,8 +63,8 @@ const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: Respo
     )
   }
 
-  const pendingMissions = todayMissions?.filter(m => m.status === 'TODO') || []
-  const inProgressMissions = todayMissions?.filter(m => m.status === 'IN_PROGRESS') || []
+  const pendingMissions = todayMissions.filter(m => m.status === 'TODO')
+  const inProgressMissions = todayMissions.filter(m => m.status === 'IN_PROGRESS')
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -145,7 +148,7 @@ const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: Respo
       </div>
 
       {/* Today's Missions */}
-      {todayMissions && todayMissions.length > 0 && (
+      {todayMissions.length > 0 && (
         <Card className="rounded-4xl bg-background/70 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
