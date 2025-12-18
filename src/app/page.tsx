@@ -37,19 +37,22 @@ export default function Home() {
   const [modal, setModal] = useState<string | null>(null);
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
 
+  // This effect handles redirection based on auth state
   useEffect(() => {
-    if (!isUserLoading && authUser && !viewedUserId) {
-      setViewedUserId(authUser.uid);
+    // When auth state is resolved
+    if (!isUserLoading) {
+      // If there is no user, redirect to login
+      if (!authUser) {
+        router.push('/login');
+      } else {
+        // If there is a user but no viewedUserId is set, set it to the logged-in user's ID
+        if (!viewedUserId) {
+          setViewedUserId(authUser.uid);
+        }
+      }
     }
-  }, [authUser, isUserLoading, viewedUserId]);
+  }, [authUser, isUserLoading, router, viewedUserId]);
 
-  useEffect(() => {
-    if (!isUserLoading && !authUser) {
-      // Reset viewedUserId when user logs out to prevent permission errors
-      setViewedUserId(null);
-      router.push('/login');
-    }
-  }, [authUser, isUserLoading, router]);
 
   const loggedInUserDocRef = useMemoFirebase(() => {
     if (!authUser?.uid) return null;
@@ -71,10 +74,8 @@ export default function Home() {
 
   const handleLogout = async () => {
     try {
-      // Reset state before logout to prevent permission errors
-      setViewedUserId(null);
       await signOut(auth);
-      router.push('/login');
+      // The useEffect hook will handle redirection to /login
     } catch (error) {
       console.error('Logout error:', error);
       // Force redirect even if signOut fails
@@ -126,9 +127,7 @@ export default function Home() {
     if (!authUser) return;
 
     try {
-      console.log('[handleAddUser] Starting user creation...');
       const idToken = await authUser.getIdToken();
-      console.log('[handleAddUser] Got ID token, calling API...');
 
       const response = await fetch('/api/create-user', {
         method: 'POST',
@@ -143,20 +142,15 @@ export default function Home() {
         })
       });
 
-      console.log('[handleAddUser] API response received:', response.status);
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "La création de l'utilisateur a échoué.");
       }
 
       await response.json();
-      console.log('[handleAddUser] User created successfully');
 
       toast({ title: "Collaborateur ajouté !", description: `${newUser.name} peut maintenant se connecter.` });
-      console.log('[handleAddUser] Toast shown, closing modal...');
       setModal(null);
-      console.log('[handleAddUser] Modal closed, function complete');
 
     } catch (error: any) {
       console.error("[handleAddUser] Error creating collaborator:", error);
@@ -183,6 +177,8 @@ export default function Home() {
     return userList;
   }, [loggedInUserData, collaborators]);
 
+  // While the auth state is loading, show a full-screen loader.
+  // The redirection logic is handled in the useEffect hook.
   if (isUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -191,7 +187,7 @@ export default function Home() {
     );
   }
 
-  // If user is not authenticated, don't render anything (will redirect to login)
+  // If user is not authenticated, the useEffect hook will redirect, so we can return null.
   if (!authUser) {
     return null;
   }
@@ -287,3 +283,5 @@ export default function Home() {
     </SidebarProvider>
   );
 }
+
+    

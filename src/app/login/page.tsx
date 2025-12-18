@@ -47,6 +47,7 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
+    // Redirect to home if user is logged in
     if (!isUserLoading && user) {
       router.push('/');
     }
@@ -66,7 +67,6 @@ export default function LoginPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
       const userDocRef = doc(firestore, 'users', user.uid);
-      // For now, new users are always PATRONs. RESPONSABLEs are created by PATRONs.
       // IMPORTANT: We must wait for the document to be created before Firebase can read it
       await setDoc(userDocRef, {
         id: user.uid,
@@ -94,8 +94,15 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || user) {
+  // While checking auth, show a loading state. 
+  // If user is found, the useEffect above will redirect.
+  if (isUserLoading) {
     return <div className="flex items-center justify-center min-h-screen bg-background"><p>Chargement...</p></div>;
+  }
+  
+  // If user is already logged in, useEffect will handle redirection, so we can return null here to avoid flicker.
+  if (user) {
+    return null;
   }
   
   const formVariants = {
