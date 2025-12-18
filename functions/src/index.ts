@@ -229,9 +229,11 @@ export const createMissingUserDoc = functions.https.onRequest(async (req, res) =
     const userRecord = await admin.auth().getUser(userId);
 
     // Create the document
+    const defaultName = userRecord.displayName || 'Nouveau Gestionnaire';
+
     await db.collection('users').doc(userId).set({
       id: userId,
-      name: userRecord.displayName || userRecord.email?.split('@')[0] || 'Utilisateur',
+      name: defaultName,
       email: userRecord.email || '',
       role: 'PATRON',
       avatar: userRecord.photoURL || `https://picsum.photos/seed/${userId}/100/100`,

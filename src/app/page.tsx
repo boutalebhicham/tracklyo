@@ -84,9 +84,13 @@ export default function Home() {
 
       try {
         const userDocRef = doc(firestore, 'users', authUser.uid);
+
+        // Use displayName if available, otherwise use a clean default name
+        const defaultName = authUser.displayName || 'Nouveau Gestionnaire';
+
         await setDoc(userDocRef, {
           id: authUser.uid,
-          name: authUser.displayName || authUser.email?.split('@')[0] || 'Utilisateur',
+          name: defaultName,
           email: authUser.email || '',
           role: 'PATRON',
           avatar: authUser.photoURL || `https://picsum.photos/seed/${authUser.uid}/100/100`,
