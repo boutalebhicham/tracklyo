@@ -49,7 +49,14 @@ const commentsData = Object.keys(commentsQueries).reduce((acc, recapId) => {
 
   const getUser = (id: string) => users.find(u => u.id === id);
 
+  // Only the account owner can create recaps on their own account
+  // RESPONSABLE creates activity reports on their account
+  // PATRON can create complete reports on their personal account
+  // PATRON cannot create reports on collaborator accounts (only view and comment)
   const canAddRecap = currentUser?.id === viewedUserId;
+
+  // PATRON can comment on collaborator recaps when viewing their account
+  const canComment = currentUser?.role === 'PATRON' || currentUser?.id === viewedUserId;
 
   const handleAddComment = (recapId: string, content: string) => {
     if (!content.trim() || !currentUser || !viewedUserId) return;
@@ -167,7 +174,7 @@ const commentsData = Object.keys(commentsQueries).reduce((acc, recapId) => {
                             )
                             })}
                         </div>}
-                        {currentUser && <div className="w-full flex items-center gap-2 pt-4 border-t">
+                        {currentUser && canComment && <div className="w-full flex items-center gap-2 pt-4 border-t">
                             <Avatar className="w-8 h-8">
                                 <AvatarImage src={currentUser?.avatar}/>
                                 <AvatarFallback>{currentUser?.name.charAt(0)}</AvatarFallback>
