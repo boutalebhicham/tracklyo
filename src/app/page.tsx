@@ -237,7 +237,7 @@ export default function Home() {
   const renderContent = () => {
     switch(activeView) {
       case 'accueil':
-        return <DashboardView viewedUserId={viewedUserId} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
+        return <DashboardView viewedUserId={viewedUserId} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} setViewedUserId={setViewedUserId} />;
       case 'finances':
         return <FinancesView viewedUserId={viewedUserId} onAddTransaction={() => setModal('addTransaction')} viewAs={loggedInUserData?.role} />;
       case 'activite':
@@ -247,7 +247,7 @@ export default function Home() {
       case 'fichiers':
         return <FilesView viewedUserId={viewedUserId} onAddDocument={() => setModal('addDocument')} />;
       default:
-        return <DashboardView viewedUserId={viewedUserId} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} />;
+        return <DashboardView viewedUserId={viewedUserId} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} setViewedUserId={setViewedUserId} />;
     }
   }
 

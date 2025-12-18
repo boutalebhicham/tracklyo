@@ -17,7 +17,7 @@ import { collection, query, orderBy } from 'firebase/firestore'
 import type { User, Transaction, Mission, Recap } from '@/lib/definitions'
 import { generatePDFReport, downloadPDF, type ExportData as PDFExportData } from '@/lib/export-pdf'
 import { generateExcelReport, downloadExcel, type ExportData as ExcelExportData } from '@/lib/export-excel'
-import { format } from 'date-fns'
+import { format as formatDate } from 'date-fns'
 
 type ExportButtonProps = {
   user: User
@@ -68,7 +68,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({ user, viewedUserId }) => {
         recaps,
       }
 
-      const dateStr = format(new Date(), 'yyyy-MM-dd_HH-mm')
+      const dateStr = formatDate(new Date(), 'yyyy-MM-dd_HH-mm')
       const baseFilename = `rapport_${user.name.replace(/\s+/g, '_')}_${dateStr}`
 
       if (format === 'pdf') {

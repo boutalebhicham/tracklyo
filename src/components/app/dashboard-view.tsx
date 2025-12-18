@@ -12,9 +12,10 @@ type DashboardViewProps = {
   viewedUserId: string | null
   onQuickAdd: (modal: any) => void
   setActiveView: (view: string) => void
+  setViewedUserId: (userId: string) => void
 }
 
-const DashboardView = ({ viewedUserId, onQuickAdd, setActiveView }: DashboardViewProps) => {
+const DashboardView = ({ viewedUserId, onQuickAdd, setActiveView, setViewedUserId }: DashboardViewProps) => {
   const firestore = useFirestore()
 
   const userDocRef = useMemoFirebase(
@@ -86,6 +87,7 @@ const DashboardView = ({ viewedUserId, onQuickAdd, setActiveView }: DashboardVie
       collaborators={collaborators || []}
       onQuickAdd={onQuickAdd}
       setActiveView={setActiveView}
+      setViewedUserId={setViewedUserId}
     />
   )
 }

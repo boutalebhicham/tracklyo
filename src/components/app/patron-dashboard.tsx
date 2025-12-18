@@ -11,6 +11,7 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { collection, query, orderBy, limit } from 'firebase/firestore'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import ActivityFeed from './activity-feed'
 
 const CashFlowChart = lazy(() => import('./cash-flow-chart'))
 
@@ -19,9 +20,10 @@ type PatronDashboardProps = {
   collaborators: User[]
   onQuickAdd: (modal: 'addTransaction' | 'addUser') => void
   setActiveView: (view: string) => void
+  setViewedUserId: (userId: string) => void
 }
 
-const PatronDashboard = ({ viewedUserId, collaborators, onQuickAdd, setActiveView }: PatronDashboardProps) => {
+const PatronDashboard = ({ viewedUserId, collaborators, onQuickAdd, setActiveView, setViewedUserId }: PatronDashboardProps) => {
   const firestore = useFirestore()
 
   const transactionsQuery = useMemoFirebase(
@@ -166,32 +168,13 @@ const PatronDashboard = ({ viewedUserId, collaborators, onQuickAdd, setActiveVie
         </div>
       </div>
 
-      {/* Collaborators Overview */}
+      {/* Activity Feed from Collaborators */}
       {collaborators.length > 0 && (
-        <Card className="rounded-4xl bg-background/70 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users size={20} />
-              Collaborateurs ({collaborators.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {collaborators.map(collab => (
-                <div
-                  key={collab.id}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                  onClick={() => setActiveView('finances')}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{collab.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{collab.email}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <ActivityFeed
+          collaborators={collaborators}
+          setActiveView={setActiveView}
+          setViewedUserId={setViewedUserId}
+        />
       )}
     </div>
   )
