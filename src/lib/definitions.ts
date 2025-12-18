@@ -32,6 +32,7 @@ export interface Transaction {
   type: TransactionType;
   currency: Currency;
   paymentMethod?: PaymentMethod;
+  attachments?: string[]; // URLs of attached receipt images or PDFs
 }
 
 export interface Recap {

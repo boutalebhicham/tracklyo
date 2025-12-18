@@ -26,6 +26,7 @@ import AppBottomNav from '@/components/app/app-bottom-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import NotificationHandler from '@/components/app/notification-handler';
 import ViewSwitcher from '@/components/app/view-switcher';
+import { uploadFiles } from '@/lib/storage';
 
 export default function Home() {
   const { user: authUser, isUserLoading } = useUser();
@@ -93,15 +94,40 @@ export default function Home() {
     }
   };
   
-  const handleAddTransaction = (newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>) => {
+  const handleAddTransaction = async (
+    newTransaction: Omit<Transaction, 'id' | 'authorId' | 'date'>,
+    transactions: Transaction[],
+    files: File[]
+  ) => {
     if (!viewedUserId) return;
-    const ref = collection(firestore, 'users', viewedUserId, 'transactions');
-    addDocumentNonBlocking(ref, {
-      ...newTransaction,
-      authorId: viewedUserId,
-      date: new Date().toISOString(),
-    });
-    setModal(null);
+
+    try {
+      // Upload files to Firebase Storage if any
+      let attachmentUrls: string[] = [];
+      if (files.length > 0) {
+        toast({ title: "Upload en cours...", description: "Téléchargement des justificatifs..." });
+        attachmentUrls = await uploadFiles(files, viewedUserId, 'receipts');
+      }
+
+      // Create transaction with attachment URLs
+      const ref = collection(firestore, 'users', viewedUserId, 'transactions');
+      addDocumentNonBlocking(ref, {
+        ...newTransaction,
+        authorId: viewedUserId,
+        date: new Date().toISOString(),
+        ...(attachmentUrls.length > 0 && { attachments: attachmentUrls }),
+      });
+
+      toast({ title: "Transaction enregistrée", description: "La transaction a été ajoutée avec succès." });
+      setModal(null);
+    } catch (error) {
+      console.error('[handleAddTransaction] Error:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'enregistrer la transaction."
+      });
+    }
   };
   
   const handleAddRecap = (newRecap: Omit<Recap, 'id' | 'authorId' | 'date'>) => {

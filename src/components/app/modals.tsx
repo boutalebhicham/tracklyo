@@ -24,6 +24,7 @@ import { Image as ImageIcon, Video, Mic, Upload, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import FileUploader from './file-uploader';
 
 
 type ModalProps = {
@@ -87,12 +88,13 @@ export const AddUserModal = ({ isOpen, onClose, onAddUser }: ModalProps & { onAd
 };
 
 
-export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, viewAs }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id' | 'authorId' | 'date'>, transactions: Transaction[]) => void, authorId: string, viewAs: string }) => {
+export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorId, viewAs }: ModalProps & { onAddTransaction: (tx: Omit<Transaction, 'id' | 'authorId' | 'date'>, transactions: Transaction[], files: File[]) => void, authorId: string, viewAs: string }) => {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [currency, setCurrency] = useState<Currency>('EUR');
   const [transactionType, setTransactionType] = useState<TransactionType>('EXPENSE');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [error, setError] = useState('');
 
   const firestore = useFirestore();
@@ -142,10 +144,11 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
       transaction.paymentMethod = paymentMethod;
     }
 
-    onAddTransaction(transaction, transactions);
+    onAddTransaction(transaction, transactions, attachmentFiles);
     setAmount('');
     setReason('');
     setPaymentMethod('CASH');
+    setAttachmentFiles([]);
     setError('');
     onClose();
   };
@@ -196,6 +199,18 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
                   <SelectItem value="ORANGE_MONEY">Orange Money</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+          {transactionType === 'EXPENSE' && (
+            <div className="space-y-2">
+              <Label>Justificatifs</Label>
+              <FileUploader
+                files={attachmentFiles}
+                onChange={setAttachmentFiles}
+                maxFiles={3}
+                accept="image/*,.pdf"
+                maxSize={5}
+              />
             </div>
           )}
           {error && <Alert variant="destructive" className="rounded-xl"><AlertDescription>{error}</AlertDescription></Alert>}

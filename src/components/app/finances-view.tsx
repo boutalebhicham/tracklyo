@@ -14,6 +14,7 @@ import { Plus, ArrowDown, ArrowUp, Wallet, Clock, MoreHorizontal } from 'lucide-
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { collection, query, orderBy } from 'firebase/firestore'
 import { Skeleton } from '../ui/skeleton'
+import AttachmentViewer from './attachment-viewer'
 
 // Lazy load the chart component to improve initial load performance
 const CashFlowChart = lazy(() => import('./cash-flow-chart'))
@@ -172,6 +173,7 @@ const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewPr
                   <TableHead>Raison</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="hidden sm:table-cell">Paiement</TableHead>
+                  <TableHead className="hidden md:table-cell">Justificatifs</TableHead>
                   <TableHead className="text-right">Montant</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
@@ -190,6 +192,9 @@ const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewPr
                     <TableCell className="text-muted-foreground">{format(parseISO(tx.date), 'd MMM yyyy, HH:mm', { locale: fr })}</TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
                       {tx.type === 'EXPENSE' && tx.paymentMethod ? paymentMethodLabels[tx.paymentMethod] : '-'}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <AttachmentViewer attachments={tx.attachments || []} />
                     </TableCell>
                     <TableCell className={`text-right font-semibold ${tx.type === 'BUDGET_ADD' ? 'text-green-500' : 'text-red-500'}`}>
                       {tx.type === 'BUDGET_ADD' ? '+' : '-'} {formatCurrency(tx.amount, tx.currency)}
