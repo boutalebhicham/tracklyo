@@ -65,46 +65,59 @@ export default function Home() {
   const { data: loggedInUserData, isLoading: isPatronLoading } = useDoc<User>(loggedInUserDocRef);
 
   // FALLBACK: Create user document if missing (safety net for signup issues)
+  const [isCreatingUserDoc, setIsCreatingUserDoc] = useState(false);
+
   useEffect(() => {
     const createMissingUserDoc = async () => {
-      if (!authUser || isPatronLoading) return;
+      // Skip if already creating, still loading, no auth user, or document exists
+      if (isCreatingUserDoc || !authUser || isPatronLoading || loggedInUserData) return;
 
-      // If user is authenticated but document doesn't exist, create it
-      if (authUser && !isPatronLoading && !loggedInUserData) {
-        console.warn('[Home] User document missing, creating fallback document for:', authUser.uid);
-        try {
-          const userDocRef = doc(firestore, 'users', authUser.uid);
-          await setDoc(userDocRef, {
-            id: authUser.uid,
-            name: authUser.displayName || authUser.email?.split('@')[0] || 'Utilisateur',
-            email: authUser.email || '',
-            role: 'PATRON',
-            avatar: authUser.photoURL || `https://picsum.photos/seed/${authUser.uid}/100/100`,
-            phoneNumber: '',
-          }, { merge: true });
+      // Check if we already attempted to create this user (prevent infinite loop)
+      const attemptedKey = `user_doc_created_${authUser.uid}`;
+      if (sessionStorage.getItem(attemptedKey)) {
+        console.log('[Home] Already attempted to create user doc, skipping');
+        return;
+      }
 
-          toast({
-            title: 'Compte créé',
-            description: 'Votre profil a été configuré avec succès.',
-          });
+      console.warn('[Home] User document missing, creating fallback document for:', authUser.uid);
+      setIsCreatingUserDoc(true);
 
-          // Wait a bit for Firestore to index, then reload
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        } catch (error) {
-          console.error('[Home] Failed to create fallback user document:', error);
-          toast({
-            variant: 'destructive',
-            title: 'Erreur de profil',
-            description: 'Impossible de créer votre profil. Veuillez vous reconnecter.',
-          });
-        }
+      try {
+        const userDocRef = doc(firestore, 'users', authUser.uid);
+        await setDoc(userDocRef, {
+          id: authUser.uid,
+          name: authUser.displayName || authUser.email?.split('@')[0] || 'Utilisateur',
+          email: authUser.email || '',
+          role: 'PATRON',
+          avatar: authUser.photoURL || `https://picsum.photos/seed/${authUser.uid}/100/100`,
+          phoneNumber: '',
+        }, { merge: true });
+
+        // Mark as attempted
+        sessionStorage.setItem(attemptedKey, 'true');
+
+        toast({
+          title: 'Compte créé',
+          description: 'Votre profil a été configuré avec succès.',
+        });
+
+        // Wait a bit for Firestore to index, then reload
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        console.error('[Home] Failed to create fallback user document:', error);
+        setIsCreatingUserDoc(false);
+        toast({
+          variant: 'destructive',
+          title: 'Erreur de profil',
+          description: 'Impossible de créer votre profil. Veuillez vous reconnecter.',
+        });
       }
     };
 
     createMissingUserDoc();
-  }, [authUser, isPatronLoading, loggedInUserData, firestore, toast]);
+  }, [authUser, isPatronLoading, loggedInUserData, firestore, toast, isCreatingUserDoc]);
 
   const viewedUserDocRef = useMemoFirebase(() => {
     if (!viewedUserId) return null;

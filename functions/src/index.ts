@@ -200,12 +200,54 @@ export const onMissionCreated = functions.firestore
 // Scheduled function to check for mission reminders (runs every hour)
 export const checkMissionReminders = functions.pubsub
   .schedule('every 1 hours')
-  .onRun(async (context) => {
-    const now = new Date();
-    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
-
+  .onRun(async () => {
     // This is a simplified version - you would need to add a dueDate field to missions
     console.log('Checking for mission reminders...');
     // Implementation would query missions with dueDate within the next hour
     // and send reminders to the assignees
   });
+
+// Emergency function to create missing user documents
+// Call this via: https://REGION-PROJECT.cloudfunctions.net/createMissingUserDoc?userId=USER_ID
+export const createMissingUserDoc = functions.https.onRequest(async (req, res) => {
+  try {
+    const userId = req.query.userId as string;
+
+    if (!userId) {
+      res.status(400).send('Missing userId parameter');
+      return;
+    }
+
+    // Check if document already exists
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      res.status(200).json({ message: 'User document already exists', userId });
+      return;
+    }
+
+    // Get user info from Auth
+    const userRecord = await admin.auth().getUser(userId);
+
+    // Create the document
+    await db.collection('users').doc(userId).set({
+      id: userId,
+      name: userRecord.displayName || userRecord.email?.split('@')[0] || 'Utilisateur',
+      email: userRecord.email || '',
+      role: 'PATRON',
+      avatar: userRecord.photoURL || `https://picsum.photos/seed/${userId}/100/100`,
+      phoneNumber: userRecord.phoneNumber || '',
+    });
+
+    res.status(200).json({
+      message: 'User document created successfully',
+      userId,
+      userData: {
+        name: userRecord.displayName || userRecord.email?.split('@')[0],
+        email: userRecord.email
+      }
+    });
+  } catch (error: any) {
+    console.error('Error creating user document:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
