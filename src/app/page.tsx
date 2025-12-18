@@ -25,6 +25,7 @@ import AppMobileHeader from '@/components/app/app-mobile-header';
 import AppBottomNav from '@/components/app/app-bottom-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import NotificationHandler from '@/components/app/notification-handler';
+import ViewSwitcher from '@/components/app/view-switcher';
 
 export default function Home() {
   const { user: authUser, isUserLoading } = useUser();
@@ -242,13 +243,21 @@ export default function Home() {
         )}
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
            {isMobile && (
-            <AppMobileHeader 
+            <AppMobileHeader
               loggedInUser={loggedInUserData}
               collaborators={collaborators || []}
               viewedUserId={viewedUserId}
               setViewedUserId={setViewedUserId}
               onAddCollaborator={handleAddCollaborator}
               onLogout={handleLogout}
+            />
+          )}
+          {!isMobile && loggedInUserData?.role === 'PATRON' && collaborators && viewedUserData && (
+            <ViewSwitcher
+              loggedInUser={loggedInUserData}
+              collaborators={collaborators}
+              viewedUser={viewedUserData}
+              onViewChange={setViewedUserId}
             />
           )}
           <div className="p-4 sm:p-6 lg:p-8">
