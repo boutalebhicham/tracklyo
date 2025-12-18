@@ -40,6 +40,7 @@ export default function Home() {
   const [activeView, setActiveView] = useState('accueil');
   const [modal, setModal] = useState<string | null>(null);
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
+  const [lastAuthUserId, setLastAuthUserId] = useState<string | null>(null);
 
   // This effect handles redirection based on auth state
   useEffect(() => {
@@ -49,16 +50,21 @@ export default function Home() {
       if (!authUser) {
         // Clear viewedUserId when user logs out to prevent permission errors
         setViewedUserId(null);
+        setLastAuthUserId(null);
         router.push('/login');
       } else {
-        // ALWAYS reset viewedUserId to the current authenticated user's ID
-        // This ensures collaborators see their own dashboard, not the patron's
-        if (viewedUserId !== authUser.uid) {
+        // Only reset viewedUserId when a DIFFERENT user logs in (not on every render)
+        // This allows PATRON to switch between collaborators without being reset
+        if (lastAuthUserId !== authUser.uid) {
+          setViewedUserId(authUser.uid);
+          setLastAuthUserId(authUser.uid);
+        } else if (!viewedUserId) {
+          // If viewedUserId is somehow null, set it to current user
           setViewedUserId(authUser.uid);
         }
       }
     }
-  }, [authUser, isUserLoading, router, viewedUserId]);
+  }, [authUser, isUserLoading, router, viewedUserId, lastAuthUserId]);
 
 
   const loggedInUserDocRef = useMemoFirebase(() => {
@@ -105,13 +111,11 @@ export default function Home() {
 
         toast({
           title: 'Compte créé',
-          description: 'Votre profil a été configuré avec succès.',
+          description: 'Votre profil a été configuré avec succès. Rechargez la page.',
         });
 
-        // Wait a bit for Firestore to index, then reload
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Don't auto-reload, let user manually reload to avoid confusion
+        // The document is created, next page load will work normally
       } catch (error) {
         console.error('[Home] Failed to create fallback user document:', error);
         setIsCreatingUserDoc(false);
