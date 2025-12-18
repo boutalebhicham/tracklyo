@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, Circle, Clock, CheckCircle2, Trash2 } from 'lucide-react'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
-import { collection, query, orderBy, where, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { collection, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { Skeleton } from '../ui/skeleton'
 import { cn } from '@/lib/utils'
 
@@ -26,14 +26,18 @@ const MissionsView = ({ viewedUserId, onAddMission }: MissionsViewProps) => {
     () => viewedUserId
       ? query(
           collection(firestore, 'users', viewedUserId, 'missions'),
-          where('type', '==', activeTab),
           orderBy('createdAt', 'desc')
         )
       : null,
-    [firestore, viewedUserId, activeTab]
+    [firestore, viewedUserId]
   )
 
-  const { data: missions, isLoading } = useCollection<Mission>(missionsQuery)
+  const { data: allMissions, isLoading } = useCollection<Mission>(missionsQuery)
+
+  const missions = useMemo(() => {
+    if (!allMissions) return []
+    return allMissions.filter(m => m.type === activeTab)
+  }, [allMissions, activeTab])
 
   const groupedMissions = useMemo(() => {
     if (!missions) return { TODO: [], IN_PROGRESS: [], DONE: [] }
