@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 import type { User } from '@/lib/definitions'
-import { LayoutGrid, Activity, Calendar, Folder, Landmark, LogOut } from 'lucide-react'
+import { LayoutGrid, Activity, CheckSquare, Folder, Landmark, LogOut } from 'lucide-react'
 import Logo from './logo'
 import CollaboratorSwitcher from './collaborator-switcher'
 
@@ -32,7 +32,7 @@ type AppSidebarProps = {
 export const menuItems = [
   { id: 'accueil', label: 'Accueil', icon: LayoutGrid },
   { id: 'activite', label: 'Activité', icon: Activity },
-  { id: 'agenda', label: 'Agenda', icon: Calendar },
+  { id: 'missions', label: 'Missions', icon: CheckSquare },
   { id: 'fichiers', label: 'Fichiers', icon: Folder },
   { id: 'finances', label: 'Finances', icon: Landmark },
 ];

@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import type { User, Currency, Transaction, Recap, Event as CalendarEvent, RecapType, TransactionType, PaymentMethod, DocumentFile, AddUserForm } from '@/lib/definitions';
+import type { User, Currency, Transaction, Recap, Event as CalendarEvent, RecapType, TransactionType, PaymentMethod, DocumentFile, AddUserForm, Mission, MissionType } from '@/lib/definitions';
 import { calculateBalance, CONVERSION_RATES } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Image as ImageIcon, Video, Mic, Upload, Camera } from 'lucide-react';
@@ -371,4 +371,84 @@ export const AddDocumentModal = ({ isOpen, onClose, onAddDocument, authorId }: M
         </Dialog>
     )
 };
-    
+
+export const AddMissionModal = ({ isOpen, onClose, onAddMission, authorId }: ModalProps & { onAddMission: (mission: Omit<Mission, 'id' | 'authorId' | 'createdAt' | 'updatedAt'>) => void, authorId: string }) => {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [missionType, setMissionType] = useState<MissionType>('PERSONAL');
+
+    const handleSubmit = () => {
+        if (!title.trim()) return;
+        onAddMission({
+            title: title.trim(),
+            description: description.trim() || undefined,
+            status: 'TODO',
+            type: missionType,
+        });
+        setTitle('');
+        setDescription('');
+        setMissionType('PERSONAL');
+        onClose();
+    };
+
+    const resetAndClose = () => {
+        setTitle('');
+        setDescription('');
+        setMissionType('PERSONAL');
+        onClose();
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={resetAndClose}>
+            <GlassDialogContent>
+                <DialogHeader>
+                    <DialogTitle className="text-center">Nouvelle Mission</DialogTitle>
+                    <DialogDescription className="text-center">
+                        Créez une nouvelle mission pour organiser votre travail
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label>Type de mission</Label>
+                        <RadioGroup value={missionType} onValueChange={(v: MissionType) => setMissionType(v)}>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="PERSONAL" id="personal" />
+                                <Label htmlFor="personal" className="font-normal cursor-pointer">Personnel (privé)</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="SHARED" id="shared" />
+                                <Label htmlFor="shared" className="font-normal cursor-pointer">Collaborateur (partagé)</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Titre de la mission</Label>
+                        <Input
+                            id="title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Ex: Préparer le rapport mensuel"
+                            className="rounded-xl"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Description (optionnel)</Label>
+                        <Textarea
+                            id="description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Détails de la mission..."
+                            className="rounded-xl min-h-[100px]"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleSubmit} className="w-full rounded-xl" disabled={!title.trim()}>
+                        Créer la mission
+                    </Button>
+                </DialogFooter>
+            </GlassDialogContent>
+        </Dialog>
+    );
+};
+

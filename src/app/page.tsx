@@ -7,16 +7,16 @@ import { useUser, useAuth, useMemoFirebase, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { useCollection, useDoc } from '@/firebase';
-import type { User, AddUserForm, Transaction, Recap, Event, Document as DocumentFile } from '@/lib/definitions';
+import type { User, AddUserForm, Transaction, Recap, Event, Document as DocumentFile, Mission } from '@/lib/definitions';
 import AppSidebar from '@/components/app/app-sidebar';
 import AppHeader from '@/components/app/app-header';
 import DashboardView from '@/components/app/dashboard-view';
 import FinancesView from '@/components/app/finances-view';
 import ActivityView from '@/components/app/activity-view';
-import CalendarView from '@/components/app/calendar-view';
+import MissionsView from '@/components/app/missions-view';
 import FilesView from '@/components/app/files-view';
 import WhatsAppFab from '@/components/app/whatsapp-fab';
-import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal } from '@/components/app/modals';
+import { PaywallModal, AddUserModal, AddTransactionModal, AddRecapModal, AddEventModal, AddDocumentModal, AddMissionModal } from '@/components/app/modals';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
@@ -162,11 +162,24 @@ export default function Home() {
   const handleAddDocument = (newDocument: Omit<DocumentFile, 'id' | 'authorId' | 'date'>) => {
     if (!viewedUserId) return;
     const ref = collection(firestore, 'users', viewedUserId, 'documents');
-    addDocumentNonBlocking(ref, { 
+    addDocumentNonBlocking(ref, {
         ...newDocument,
         authorId: viewedUserId,
         date: new Date().toISOString()
      });
+    setModal(null);
+  };
+
+  const handleAddMission = (newMission: Omit<Mission, 'id' | 'authorId' | 'createdAt' | 'updatedAt'>) => {
+    if (!viewedUserId) return;
+    const ref = collection(firestore, 'users', viewedUserId, 'missions');
+    const now = new Date().toISOString();
+    addDocumentNonBlocking(ref, {
+      ...newMission,
+      authorId: viewedUserId,
+      createdAt: now,
+      updatedAt: now,
+    });
     setModal(null);
   };
 
@@ -200,8 +213,8 @@ export default function Home() {
         return <FinancesView viewedUserId={viewedUserId} onAddTransaction={() => setModal('addTransaction')} viewAs={loggedInUserData?.role} />;
       case 'activite':
         return <ActivityView viewedUserId={viewedUserId} users={allUsersForActivity} onAddRecap={() => setModal('addRecap')} currentUser={loggedInUserData} />;
-      case 'agenda':
-        return <CalendarView viewedUserId={viewedUserId} onAddEvent={() => setModal('addEvent')} />;
+      case 'missions':
+        return <MissionsView viewedUserId={viewedUserId} onAddMission={() => setModal('addMission')} />;
       case 'fichiers':
         return <FilesView viewedUserId={viewedUserId} onAddDocument={() => setModal('addDocument')} />;
       default:
@@ -276,6 +289,12 @@ export default function Home() {
             isOpen={modal === 'addDocument'}
             onClose={() => setModal(null)}
             onAddDocument={handleAddDocument}
+            authorId={viewedUserId}
+          />
+          <AddMissionModal
+            isOpen={modal === 'addMission'}
+            onClose={() => setModal(null)}
+            onAddMission={handleAddMission}
             authorId={viewedUserId}
           />
         </>

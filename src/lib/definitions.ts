@@ -5,6 +5,8 @@ export type TransactionType = 'BUDGET_ADD' | 'EXPENSE';
 export type PaymentMethod = 'CASH' | 'CARD' | 'WAVE' | 'ORANGE_MONEY';
 export type RecapType = 'DAILY' | 'WEEKLY';
 export type UserRole = 'PATRON' | 'RESPONSABLE';
+export type MissionStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
+export type MissionType = 'PERSONAL' | 'SHARED';
 
 export interface User {
   id: string;
@@ -82,4 +84,15 @@ export interface CalendarEvent {
   title: string;
   date: string;
   description?: string;
+}
+
+export interface Mission {
+  id: string;
+  authorId: string;
+  title: string;
+  description?: string;
+  status: MissionStatus;
+  type: MissionType;
+  createdAt: string;
+  updatedAt: string;
 }
