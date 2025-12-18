@@ -5,11 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button'
 import { Plus, Wallet, ArrowDown, ArrowUp, Users, Clock } from 'lucide-react'
 import { formatCurrencyCompact, calculateBalance, convertCurrency } from '@/lib/utils'
-import type { Transaction, Recap, Mission, User, Currency } from '@/lib/definitions'
+import type { Transaction, User, Currency } from '@/lib/definitions'
 import { Skeleton } from '../ui/skeleton'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { collection, query, orderBy, limit } from 'firebase/firestore'
-import ActivityTimeline from './activity-timeline'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -30,16 +29,6 @@ const PatronDashboard = ({ viewedUserId, collaborators, onQuickAdd, setActiveVie
     [firestore, viewedUserId]
   )
   const { data: transactions, isLoading: areTransactionsLoading } = useCollection<Transaction>(transactionsQuery)
-
-  // Fetch all collaborators' data for timeline
-  const allCollaboratorsData = useMemo(() => {
-    return collaborators.map(collab => ({
-      user: collab,
-      transactionsQuery: query(collection(firestore, 'users', collab.id, 'transactions'), orderBy('date', 'desc'), limit(10)),
-      recapsQuery: query(collection(firestore, 'users', collab.id, 'recaps'), orderBy('date', 'desc'), limit(10)),
-      missionsQuery: query(collection(firestore, 'users', collab.id, 'missions'), orderBy('updatedAt', 'desc'), limit(10)),
-    }))
-  }, [collaborators, firestore])
 
   const { balance, totalBudget, totalExpenses } = useMemo(() => {
     if (!transactions) return { balance: 0, totalBudget: 0, totalExpenses: 0 }
@@ -71,28 +60,6 @@ const PatronDashboard = ({ viewedUserId, collaborators, onQuickAdd, setActiveVie
       }))
       .reverse()
   }, [transactions])
-
-  // Collect all transactions, recaps, and missions from collaborators
-  const allTransactions = useMemo(() => {
-    return allCollaboratorsData.map(collab => {
-      const { data } = useCollection<Transaction>(collab.transactionsQuery)
-      return { userId: collab.user.id, transactions: data || [] }
-    })
-  }, [allCollaboratorsData])
-
-  const allRecaps = useMemo(() => {
-    return allCollaboratorsData.map(collab => {
-      const { data } = useCollection<Recap>(collab.recapsQuery)
-      return { userId: collab.user.id, recaps: data || [] }
-    })
-  }, [allCollaboratorsData])
-
-  const allMissions = useMemo(() => {
-    return allCollaboratorsData.map(collab => {
-      const { data } = useCollection<Mission>(collab.missionsQuery)
-      return { userId: collab.user.id, missions: data || [] }
-    })
-  }, [allCollaboratorsData])
 
   if (areTransactionsLoading) {
     return (
@@ -199,15 +166,33 @@ const PatronDashboard = ({ viewedUserId, collaborators, onQuickAdd, setActiveVie
         </div>
       </div>
 
-      {/* Activity Timeline */}
-      <ActivityTimeline
-        collaborators={collaborators}
-        allTransactions={allTransactions}
-        allRecaps={allRecaps}
-        allMissions={allMissions}
-        isLoading={false}
-        setActiveView={setActiveView}
-      />
+      {/* Collaborators Overview */}
+      {collaborators.length > 0 && (
+        <Card className="rounded-4xl bg-background/70 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users size={20} />
+              Collaborateurs ({collaborators.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {collaborators.map(collab => (
+                <div
+                  key={collab.id}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                  onClick={() => setActiveView('finances')}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{collab.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{collab.email}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
