@@ -227,12 +227,71 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
     const [description, setDescription] = useState('');
     const [type, setType] = useState<RecapType>('DAILY');
     const [mediaFile, setMediaFile] = useState<File | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const recognitionRef = React.useRef<any>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       if (event.target.files && event.target.files[0]) {
         setMediaFile(event.target.files[0]);
       }
+    };
+
+    const handleVoiceInput = () => {
+      // Check if browser supports speech recognition
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        alert('La reconnaissance vocale n\'est pas supportée par votre navigateur. Essayez Chrome ou Edge.');
+        return;
+      }
+
+      if (isRecording) {
+        // Stop recording
+        recognitionRef.current?.stop();
+        setIsRecording(false);
+        return;
+      }
+
+      // Start recording
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-FR';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          setDescription(prev => prev + finalTranscript);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
     };
 
     const handleSubmit = () => {
@@ -243,7 +302,7 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
               recapData.mediaType = mediaFile.type.startsWith('image/') ? 'image' : 'video';
             }
             onAddRecap(recapData);
-            setTitle(''); 
+            setTitle('');
             setDescription('');
             setMediaFile(null);
             onClose();
@@ -254,6 +313,8 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
       setTitle('');
       setDescription('');
       setMediaFile(null);
+      recognitionRef.current?.stop();
+      setIsRecording(false);
       onClose();
     }
 
@@ -290,8 +351,13 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
                         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => fileInputRef.current?.click()}>
                           <Video className="text-primary" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="rounded-full">
-                          <Mic className="text-primary" />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`rounded-full ${isRecording ? 'bg-red-100 dark:bg-red-900/50 animate-pulse' : ''}`}
+                          onClick={handleVoiceInput}
+                        >
+                          <Mic className={isRecording ? 'text-red-500' : 'text-primary'} />
                         </Button>
                       </div>
                     </div>
