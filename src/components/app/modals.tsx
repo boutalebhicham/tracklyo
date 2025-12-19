@@ -272,19 +272,22 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
           setIsRecording(true);
         };
 
-        recognition.onresult = (event: any) => {
-          let finalTranscript = '';
+        let fullTranscript = '';
 
-          for (let i = event.resultIndex; i < event.results.length; i++) {
+        recognition.onresult = (event: any) => {
+          let interimTranscript = '';
+
+          for (let i = 0; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-              finalTranscript += transcript + ' ';
+              fullTranscript += transcript + ' ';
+            } else {
+              interimTranscript += transcript;
             }
           }
 
-          if (finalTranscript) {
-            setDescription(prev => prev + finalTranscript);
-          }
+          // Show both final and interim results in real-time
+          setDescription(fullTranscript + interimTranscript);
         };
 
         recognition.onerror = (event: any) => {
