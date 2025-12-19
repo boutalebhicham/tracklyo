@@ -192,12 +192,12 @@ export default function Home() {
 
       await response.json();
 
+      // Wait for Firestore to index the new document before closing modal
+      // This prevents the freeze/reload issue by giving time for real-time listeners to update
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       toast({ title: "Collaborateur ajouté !", description: `${newUser.name} peut maintenant se connecter.` });
       setModal(null);
-
-      // Wait for Firestore to index the new document before the UI updates
-      // This prevents the freeze/reload issue
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
     } catch (error: any) {
       console.error("[handleAddUser] Error creating collaborator:", error);
@@ -255,7 +255,7 @@ export default function Home() {
   const renderContent = () => {
     switch(activeView) {
       case 'accueil':
-        return <DashboardView viewedUserId={viewedUserId} user={viewedUserData} isUserLoading={isViewedUserLoading} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} setViewedUserId={setViewedUserId} />;
+        return <DashboardView viewedUserId={viewedUserId} user={viewedUserData} isUserLoading={isViewedUserLoading} loggedInUser={loggedInUserData} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} setViewedUserId={setViewedUserId} />;
       case 'finances':
         return <FinancesView viewedUserId={viewedUserId} onAddTransaction={() => setModal('addTransaction')} viewAs={loggedInUserData?.role} />;
       case 'activite':
@@ -268,7 +268,7 @@ export default function Home() {
       case 'fichiers':
         return <FilesView viewedUserId={viewedUserId} onAddDocument={() => setModal('addDocument')} />;
       default:
-        return <DashboardView viewedUserId={viewedUserId} user={viewedUserData} isUserLoading={isViewedUserLoading} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} setViewedUserId={setViewedUserId} />;
+        return <DashboardView viewedUserId={viewedUserId} user={viewedUserData} isUserLoading={isViewedUserLoading} loggedInUser={loggedInUserData} onQuickAdd={(type) => setModal(type)} setActiveView={setActiveView} setViewedUserId={setViewedUserId} />;
     }
   }
 

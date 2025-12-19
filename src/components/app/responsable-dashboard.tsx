@@ -5,19 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Plus, Wallet, CheckSquare, FileText } from 'lucide-react'
 import { formatCurrencyCompact } from '@/lib/utils'
-import type { Transaction, Mission } from '@/lib/definitions'
+import type { Transaction, Mission, User } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
 import { Skeleton } from '../ui/skeleton'
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
 import { collection, query, orderBy, limit } from 'firebase/firestore'
+import ExportButton from './export-button'
 
 type ResponsableDashboardProps = {
   viewedUserId: string | null
+  viewedUser: User | null
+  loggedInUser: User | null
   onQuickAdd: (modal: 'addRecap' | 'addTransaction') => void
   setActiveView: (view: string) => void
 }
 
-const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: ResponsableDashboardProps) => {
+const ResponsableDashboard = ({ viewedUserId, viewedUser, loggedInUser, onQuickAdd, setActiveView }: ResponsableDashboardProps) => {
   const firestore = useFirestore()
 
   const transactionsQuery = useMemoFirebase(
@@ -69,8 +72,22 @@ const ResponsableDashboard = ({ viewedUserId, onQuickAdd, setActiveView }: Respo
   const pendingMissions = todayMissions.filter(m => m.status === 'TODO')
   const inProgressMissions = todayMissions.filter(m => m.status === 'IN_PROGRESS')
 
+  // Check if logged-in user is PATRON viewing a collaborator's dashboard
+  const isPatronViewing = loggedInUser?.role === 'PATRON' && viewedUser?.role === 'RESPONSABLE'
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header with Export Button (PATRON only) */}
+      {isPatronViewing && viewedUserId && viewedUser && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold">Tableau de bord - {viewedUser.name}</h2>
+            <p className="text-muted-foreground">Vue d'ensemble de l'activité du collaborateur</p>
+          </div>
+          <ExportButton user={viewedUser} viewedUserId={viewedUserId} />
+        </div>
+      )}
+
       {/* Main Balance Card */}
       <Card className="dark bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-4xl shadow-2xl border-none">
         <CardHeader className="pb-4">

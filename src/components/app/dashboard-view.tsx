@@ -12,12 +12,13 @@ type DashboardViewProps = {
   viewedUserId: string | null
   user: User | null
   isUserLoading: boolean
+  loggedInUser: User | null
   onQuickAdd: (modal: any) => void
   setActiveView: (view: string) => void
   setViewedUserId: (userId: string) => void
 }
 
-const DashboardView = ({ viewedUserId, user, isUserLoading, onQuickAdd, setActiveView, setViewedUserId }: DashboardViewProps) => {
+const DashboardView = ({ viewedUserId, user, isUserLoading, loggedInUser, onQuickAdd, setActiveView, setViewedUserId }: DashboardViewProps) => {
   const firestore = useFirestore()
 
   // Fetch collaborators if user is PATRON
@@ -59,6 +60,8 @@ const DashboardView = ({ viewedUserId, user, isUserLoading, onQuickAdd, setActiv
     return (
       <ResponsableDashboard
         viewedUserId={viewedUserId}
+        viewedUser={user}
+        loggedInUser={loggedInUser}
         onQuickAdd={onQuickAdd}
         setActiveView={setActiveView}
       />
