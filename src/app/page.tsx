@@ -73,13 +73,6 @@ export default function Home() {
   }, [firestore, authUser]);
   const { data: loggedInUserData, isLoading: isPatronLoading, error: loggedInUserError } = useDoc<User>(loggedInUserDocRef);
 
-  // Debug log for user data
-  useEffect(() => {
-    console.log('[Home] loggedInUserData:', loggedInUserData);
-    console.log('[Home] isPatronLoading:', isPatronLoading);
-    console.log('[Home] loggedInUserError:', loggedInUserError);
-  }, [loggedInUserData, isPatronLoading, loggedInUserError]);
-
   // FALLBACK: Create user document if missing (safety net for signup issues)
   const [isCreatingUserDoc, setIsCreatingUserDoc] = useState(false);
 
