@@ -14,14 +14,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Allow reading own user document (simplified for better performance)
-      // Allow managers to read their collaborators' documents
-      allow get: if isOwner(userId) || isManagerOf(userId);
-
-      // Allow authenticated users to query/list users
-      // PATRON users will use where('managerId', '==', uid) to see their collaborators
-      // Users can see their own document in list queries
-      allow list: if request.auth != null;
+      // TEMPORARY: Allow reading any user document for debugging
+      // TODO: Restrict to isOwner(userId) || isManagerOf(userId) after fixing the issue
+      allow read: if request.auth != null;
 
       // Allow updating/deleting own user document
       allow update, delete: if isOwner(userId);
