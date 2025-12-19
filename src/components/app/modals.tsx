@@ -394,12 +394,16 @@ export const AddMissionModal = ({ isOpen, onClose, onAddMission, authorId }: Mod
 
     const handleSubmit = () => {
         if (!title.trim()) return;
-        onAddMission({
+        const missionData: any = {
             title: title.trim(),
-            description: description.trim() || undefined,
             status: 'TODO',
             type: missionType,
-        });
+        };
+        // Only add description if it's not empty (Firebase doesn't accept undefined)
+        if (description.trim()) {
+            missionData.description = description.trim();
+        }
+        onAddMission(missionData);
         setTitle('');
         setDescription('');
         setMissionType('PERSONAL');
