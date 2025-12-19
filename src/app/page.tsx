@@ -73,75 +73,8 @@ export default function Home() {
   }, [firestore, authUser]);
   const { data: loggedInUserData, isLoading: isPatronLoading, error: loggedInUserError } = useDoc<User>(loggedInUserDocRef);
 
-  // FALLBACK: Create user document if missing (safety net for signup issues)
-  const [isCreatingUserDoc, setIsCreatingUserDoc] = useState(false);
-
-  useEffect(() => {
-    const createMissingUserDoc = async () => {
-      // Skip if already creating, still loading, no auth user, or document exists
-      if (isCreatingUserDoc || !authUser || isPatronLoading || loggedInUserData) return;
-
-      // Check if we already attempted to create this user (prevent infinite loop)
-      const attemptedKey = `user_doc_created_${authUser.uid}`;
-      if (sessionStorage.getItem(attemptedKey)) {
-        console.log('[Home] Already attempted to create user doc, skipping');
-        return;
-      }
-
-      console.warn('[Home] User document missing, creating fallback document for:', authUser.uid);
-      setIsCreatingUserDoc(true);
-
-      try {
-        const userDocRef = doc(firestore, 'users', authUser.uid);
-
-        // Use displayName if available, otherwise use a clean default name
-        const defaultName = authUser.displayName || 'Nouveau Gestionnaire';
-
-        console.log('[Home] Attempting to create user document with data:', {
-          id: authUser.uid,
-          name: defaultName,
-          email: authUser.email || '',
-          role: 'PATRON',
-        });
-
-        await setDoc(userDocRef, {
-          id: authUser.uid,
-          name: defaultName,
-          email: authUser.email || '',
-          role: 'PATRON',
-          avatar: authUser.photoURL || `https://picsum.photos/seed/${authUser.uid}/100/100`,
-          phoneNumber: '',
-        }, { merge: true });
-
-        console.log('[Home] ✅ User document created successfully!');
-
-        // Mark as attempted
-        sessionStorage.setItem(attemptedKey, 'true');
-
-        toast({
-          title: 'Compte créé',
-          description: 'Rechargement automatique dans 2 secondes...',
-        });
-
-        // Auto-reload after 2 seconds to ensure the document is available
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
-      } catch (error: any) {
-        console.error('[Home] ❌ Failed to create fallback user document:', error);
-        console.error('[Home] Error code:', error?.code);
-        console.error('[Home] Error message:', error?.message);
-        setIsCreatingUserDoc(false);
-        toast({
-          variant: 'destructive',
-          title: 'Erreur de profil',
-          description: `Impossible de créer votre profil: ${error?.message || 'Erreur inconnue'}`,
-        });
-      }
-    };
-
-    createMissingUserDoc();
-  }, [authUser, isPatronLoading, loggedInUserData, firestore, toast, isCreatingUserDoc]);
+  // Note: Fallback user document creation removed - signup flows now handle this with retry logic
+  // Both PATRON (login/page.tsx) and RESPONSABLE (API route) creation include retries
 
   const viewedUserDocRef = useMemoFirebase(() => {
     if (!viewedUserId) return null;

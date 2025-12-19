@@ -207,49 +207,12 @@ export const checkMissionReminders = functions.pubsub
     // and send reminders to the assignees
   });
 
-// Emergency function to create missing user documents
-// Call this via: https://REGION-PROJECT.cloudfunctions.net/createMissingUserDoc?userId=USER_ID
-export const createMissingUserDoc = functions.https.onRequest(async (req, res) => {
-  try {
-    const userId = req.query.userId as string;
-
-    if (!userId) {
-      res.status(400).send('Missing userId parameter');
-      return;
-    }
-
-    // Check if document already exists
-    const userDoc = await db.collection('users').doc(userId).get();
-    if (userDoc.exists) {
-      res.status(200).json({ message: 'User document already exists', userId });
-      return;
-    }
-
-    // Get user info from Auth
-    const userRecord = await admin.auth().getUser(userId);
-
-    // Create the document
-    const defaultName = userRecord.displayName || 'Nouveau Gestionnaire';
-
-    await db.collection('users').doc(userId).set({
-      id: userId,
-      name: defaultName,
-      email: userRecord.email || '',
-      role: 'PATRON',
-      avatar: userRecord.photoURL || `https://picsum.photos/seed/${userId}/100/100`,
-      phoneNumber: userRecord.phoneNumber || '',
-    });
-
-    res.status(200).json({
-      message: 'User document created successfully',
-      userId,
-      userData: {
-        name: userRecord.displayName || userRecord.email?.split('@')[0],
-        email: userRecord.email
-      }
-    });
-  } catch (error: any) {
-    console.error('Error creating user document:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+// DEPRECATED: This function has been removed to prevent role overwrites
+// User documents are now created with proper retry logic in:
+// - PATRON: /src/app/login/page.tsx (handleRegister function)
+// - RESPONSABLE: /src/app/api/create-user/route.ts
+//
+// Keeping this comment as documentation. The function caused issues by:
+// - Always setting role to 'PATRON' regardless of actual user type
+// - Overwriting correctly created RESPONSABLE documents
+// - Not preserving managerId for collaborators
