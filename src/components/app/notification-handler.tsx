@@ -61,13 +61,21 @@ export default function NotificationHandler() {
       const messaging = getMessaging();
       const token = await requestNotificationPermission(messaging, user.uid, firestore);
 
-      if (token) {
+      // Close the popup regardless of whether we got a token
+      // (token may be null if VAPID key is not configured)
+      if (Notification.permission === 'granted') {
         setNotificationPermission('granted');
         setShowPrompt(false);
         localStorage.removeItem('notification-prompt-dismissed');
+      } else if (Notification.permission === 'denied') {
+        // User denied, hide the prompt
+        setShowPrompt(false);
+        localStorage.setItem('notification-prompt-dismissed', 'true');
       }
     } catch (error) {
       console.error('Error enabling notifications:', error);
+      // Hide prompt on error to avoid frustrating the user
+      setShowPrompt(false);
     }
   };
 
