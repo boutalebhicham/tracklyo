@@ -26,6 +26,11 @@ const MissionsView = ({ viewedUserId, onAddMission, userRole }: MissionsViewProp
   // RESPONSABLE can only see PERSONAL missions
   const isResponsable = userRole === 'RESPONSABLE'
 
+  // Debug log
+  React.useEffect(() => {
+    console.log('[MissionsView] userRole:', userRole, '| isResponsable:', isResponsable)
+  }, [userRole, isResponsable])
+
   const missionsQuery = useMemoFirebase(
     () => viewedUserId
       ? query(

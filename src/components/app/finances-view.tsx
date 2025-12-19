@@ -27,7 +27,12 @@ type FinancesViewProps = {
 
 const FinancesView = ({ viewedUserId, onAddTransaction, viewAs }: FinancesViewProps) => {
   const [currentCurrency, setCurrentCurrency] = useState<Currency>('EUR')
-  
+
+  // Debug log
+  React.useEffect(() => {
+    console.log('[FinancesView] viewAs:', viewAs, '| Should show budget button:', viewAs === 'PATRON')
+  }, [viewAs])
+
   const firestore = useFirestore();
   const transactionsQuery = useMemoFirebase(() => viewedUserId ? query(collection(firestore, 'users', viewedUserId, 'transactions'), orderBy('date', 'desc')) : null, [firestore, viewedUserId]);
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
