@@ -32,17 +32,19 @@ const AppHeader = ({ user, actions }: AppHeaderProps) => {
       )
   }
 
+  // Extract first name, but handle edge cases like "Nouveau Gestionnaire"
   const userName = user ? user.name.split(' ')[0] : null;
+  const isDefaultName = user?.name === 'Nouveau Gestionnaire';
 
   return (
     <header className="flex items-center justify-between">
       <div>
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
           {getGreeting()}
-          {userName ? <>, <span className="text-primary">{userName}</span>.</> : '.'}
+          {userName && !isDefaultName ? <>, <span className="text-primary">{userName}</span>.</> : '.'}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
-            {user ? `Voici un aperçu de l'activité de ${userName}.` : "Voici ce qui se passe aujourd'hui."}
+            {user && !isDefaultName ? `Voici un aperçu de l'activité de ${userName}.` : "Voici ce qui se passe aujourd'hui."}
         </p>
       </div>
       <div className="flex items-center gap-3">

@@ -17,19 +17,17 @@ type MissionsViewProps = {
   viewedUserId: string | null
   onAddMission: () => void
   userRole?: 'PATRON' | 'RESPONSABLE'
+  isViewingSelf?: boolean // True when PATRON views their own dashboard
 }
 
-const MissionsView = ({ viewedUserId, onAddMission, userRole }: MissionsViewProps) => {
+const MissionsView = ({ viewedUserId, onAddMission, userRole, isViewingSelf }: MissionsViewProps) => {
   const [activeTab, setActiveTab] = useState<MissionType>('PERSONAL')
   const firestore = useFirestore()
 
-  // RESPONSABLE can only see PERSONAL missions
-  const isResponsable = userRole === 'RESPONSABLE'
-
-  // Debug log
-  React.useEffect(() => {
-    console.log('[MissionsView] userRole:', userRole, '| isResponsable:', isResponsable)
-  }, [userRole, isResponsable])
+  // Hide tabs when:
+  // 1. User is RESPONSABLE (they only see their PERSONAL missions)
+  // 2. PATRON viewing their own dashboard (they only see their PERSONAL missions)
+  const shouldHideTabs = userRole === 'RESPONSABLE' || (userRole === 'PATRON' && isViewingSelf)
 
   const missionsQuery = useMemoFirebase(
     () => viewedUserId
@@ -45,12 +43,13 @@ const MissionsView = ({ viewedUserId, onAddMission, userRole }: MissionsViewProp
 
   const missions = useMemo(() => {
     if (!allMissions) return []
-    // RESPONSABLE can only see PERSONAL missions
-    if (isResponsable) {
+    // Hide tabs view: only show PERSONAL missions
+    if (shouldHideTabs) {
       return allMissions.filter(m => m.type === 'PERSONAL')
     }
+    // Show tabs: filter by active tab
     return allMissions.filter(m => m.type === activeTab)
-  }, [allMissions, activeTab, isResponsable])
+  }, [allMissions, activeTab, shouldHideTabs])
 
   const groupedMissions = useMemo(() => {
     if (!missions) return { TODO: [], IN_PROGRESS: [], DONE: [] }
@@ -219,8 +218,8 @@ const MissionsView = ({ viewedUserId, onAddMission, userRole }: MissionsViewProp
         </Button>
       </div>
 
-      {/* RESPONSABLE can only see PERSONAL missions, no tabs needed */}
-      {!isResponsable && (
+      {/* Show tabs when PATRON views collaborator's dashboard */}
+      {!shouldHideTabs && (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MissionType)} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl">
             <TabsTrigger value="PERSONAL" className="rounded-lg">
@@ -241,8 +240,8 @@ const MissionsView = ({ viewedUserId, onAddMission, userRole }: MissionsViewProp
         </Tabs>
       )}
 
-      {/* RESPONSABLE sees missions directly without tabs */}
-      {isResponsable && (
+      {/* Hide tabs when viewing own dashboard or when user is RESPONSABLE */}
+      {shouldHideTabs && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           <MissionColumn status="TODO" missions={groupedMissions.TODO} />
           <MissionColumn status="IN_PROGRESS" missions={groupedMissions.IN_PROGRESS} />

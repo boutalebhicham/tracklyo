@@ -195,6 +195,10 @@ export default function Home() {
       toast({ title: "Collaborateur ajouté !", description: `${newUser.name} peut maintenant se connecter.` });
       setModal(null);
 
+      // Wait for Firestore to index the new document before the UI updates
+      // This prevents the freeze/reload issue
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
     } catch (error: any) {
       console.error("[handleAddUser] Error creating collaborator:", error);
       toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de créer le collaborateur." });
@@ -259,7 +263,8 @@ export default function Home() {
       case 'missions':
         // Use loggedInUserData role when viewing own data, otherwise viewedUserData
         const missionUserRole = viewedUserId === authUser?.uid ? loggedInUserData?.role : viewedUserData?.role;
-        return <MissionsView viewedUserId={viewedUserId} onAddMission={() => setModal('addMission')} userRole={missionUserRole} />;
+        const isViewingSelf = viewedUserId === authUser?.uid;
+        return <MissionsView viewedUserId={viewedUserId} onAddMission={() => setModal('addMission')} userRole={missionUserRole} isViewingSelf={isViewingSelf} />;
       case 'fichiers':
         return <FilesView viewedUserId={viewedUserId} onAddDocument={() => setModal('addDocument')} />;
       default:
