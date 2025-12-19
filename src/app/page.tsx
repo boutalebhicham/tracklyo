@@ -261,10 +261,9 @@ export default function Home() {
       case 'activite':
         return <ActivityView viewedUserId={viewedUserId} users={allUsersForActivity} onAddRecap={() => setModal('addRecap')} currentUser={loggedInUserData} />;
       case 'missions':
-        // Use loggedInUserData role when viewing own data, otherwise viewedUserData
-        const missionUserRole = viewedUserId === authUser?.uid ? loggedInUserData?.role : viewedUserData?.role;
+        // Pass logged-in user role to determine tab visibility
         const isViewingSelf = viewedUserId === authUser?.uid;
-        return <MissionsView viewedUserId={viewedUserId} onAddMission={() => setModal('addMission')} userRole={missionUserRole} isViewingSelf={isViewingSelf} />;
+        return <MissionsView viewedUserId={viewedUserId} onAddMission={() => setModal('addMission')} loggedInUserRole={loggedInUserData?.role} isViewingSelf={isViewingSelf} />;
       case 'fichiers':
         return <FilesView viewedUserId={viewedUserId} onAddDocument={() => setModal('addDocument')} />;
       default:

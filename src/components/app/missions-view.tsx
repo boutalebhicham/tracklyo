@@ -16,18 +16,20 @@ import { cn } from '@/lib/utils'
 type MissionsViewProps = {
   viewedUserId: string | null
   onAddMission: () => void
-  userRole?: 'PATRON' | 'RESPONSABLE'
-  isViewingSelf?: boolean // True when PATRON views their own dashboard
+  loggedInUserRole?: 'PATRON' | 'RESPONSABLE'
+  isViewingSelf?: boolean // True when user views their own dashboard
 }
 
-const MissionsView = ({ viewedUserId, onAddMission, userRole, isViewingSelf }: MissionsViewProps) => {
-  const [activeTab, setActiveTab] = useState<MissionType>('PERSONAL')
+const MissionsView = ({ viewedUserId, onAddMission, loggedInUserRole, isViewingSelf }: MissionsViewProps) => {
+  const [activeTab, setActiveTab] = useState<MissionType>('SHARED')
   const firestore = useFirestore()
 
+  // Show tabs only when PATRON views a collaborator's dashboard
   // Hide tabs when:
   // 1. User is RESPONSABLE (they only see their PERSONAL missions)
   // 2. PATRON viewing their own dashboard (they only see their PERSONAL missions)
-  const shouldHideTabs = userRole === 'RESPONSABLE' || (userRole === 'PATRON' && isViewingSelf)
+  const isPatronViewingCollaborator = loggedInUserRole === 'PATRON' && !isViewingSelf
+  const shouldHideTabs = !isPatronViewingCollaborator
 
   const missionsQuery = useMemoFirebase(
     () => viewedUserId

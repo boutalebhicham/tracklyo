@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Wallet, CheckSquare, FileText } from 'lucide-react'
+import { Plus, Wallet, CheckSquare, FileText, PiggyBank } from 'lucide-react'
 import { formatCurrencyCompact } from '@/lib/utils'
 import type { Transaction, Mission, User } from '@/lib/definitions'
 import { Badge } from '../ui/badge'
@@ -117,14 +117,25 @@ const ResponsableDashboard = ({ viewedUserId, viewedUser, loggedInUser, onQuickA
               <Plus size={20} className="mr-2" />
               <span className="font-semibold">Dépense</span>
             </Button>
-            {/* Rapport d'activité - opens AddRecapModal (not related to finances) */}
-            <Button
-              onClick={() => onQuickAdd('addRecap')}
-              className="h-14 rounded-2xl bg-white/20 hover:bg-white/30 text-white"
-            >
-              <FileText size={20} className="mr-2" />
-              <span className="font-semibold">Rapport</span>
-            </Button>
+            {isPatronViewing ? (
+              // PATRON viewing collaborator: show Budget button instead of Rapport
+              <Button
+                onClick={() => onQuickAdd('addTransaction')}
+                className="h-14 rounded-2xl bg-green-500/20 hover:bg-green-500/30 text-white border-green-500/30"
+              >
+                <PiggyBank size={20} className="mr-2" />
+                <span className="font-semibold">Budget</span>
+              </Button>
+            ) : (
+              // RESPONSABLE viewing own dashboard: show Rapport button
+              <Button
+                onClick={() => onQuickAdd('addRecap')}
+                className="h-14 rounded-2xl bg-white/20 hover:bg-white/30 text-white"
+              >
+                <FileText size={20} className="mr-2" />
+                <span className="font-semibold">Rapport</span>
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
