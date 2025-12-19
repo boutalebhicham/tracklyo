@@ -237,12 +237,12 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
       }
     };
 
-    const handleVoiceInput = () => {
+    const handleVoiceInput = async () => {
       // Check if browser supports speech recognition
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
       if (!SpeechRecognition) {
-        alert('La reconnaissance vocale n\'est pas supportée par votre navigateur. Essayez Chrome ou Edge.');
+        alert('La reconnaissance vocale n\'est pas supportée par votre navigateur. Essayez Chrome ou Safari.');
         return;
       }
 
@@ -253,45 +253,58 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
         return;
       }
 
+      // Request microphone permission first
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        alert('Veuillez autoriser l\'accès au microphone pour utiliser la dictée vocale.');
+        return;
+      }
+
       // Start recording
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'fr-FR';
-      recognition.continuous = true;
-      recognition.interimResults = true;
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'fr-FR';
+        recognition.continuous = true;
+        recognition.interimResults = true;
 
-      recognition.onstart = () => {
-        setIsRecording(true);
-      };
+        recognition.onstart = () => {
+          setIsRecording(true);
+        };
 
-      recognition.onresult = (event: any) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
+        recognition.onresult = (event: any) => {
+          let finalTranscript = '';
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          } else {
-            interimTranscript += transcript;
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript + ' ';
+            }
           }
-        }
 
-        if (finalTranscript) {
-          setDescription(prev => prev + finalTranscript);
-        }
-      };
+          if (finalTranscript) {
+            setDescription(prev => prev + finalTranscript);
+          }
+        };
 
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsRecording(false);
-      };
+        recognition.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          if (event.error === 'not-allowed') {
+            alert('L\'accès au microphone a été refusé. Veuillez l\'autoriser dans les paramètres de votre navigateur.');
+          }
+          setIsRecording(false);
+        };
 
-      recognition.onend = () => {
-        setIsRecording(false);
-      };
+        recognition.onend = () => {
+          setIsRecording(false);
+        };
 
-      recognitionRef.current = recognition;
-      recognition.start();
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (err) {
+        console.error('Error starting speech recognition:', err);
+        alert('Erreur lors du démarrage de la reconnaissance vocale.');
+      }
     };
 
     const handleSubmit = () => {
