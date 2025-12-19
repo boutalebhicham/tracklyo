@@ -427,19 +427,19 @@ export const AddMissionModal = ({ isOpen, onClose, onAddMission, authorId }: Mod
                         <Label>Type de mission</Label>
                         <RadioGroup value={missionType} onValueChange={(v: MissionType) => setMissionType(v)}>
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="PERSONAL" id="personal" />
-                                <Label htmlFor="personal" className="font-normal cursor-pointer">Personnel (privé)</Label>
+                                <RadioGroupItem value="PERSONAL" id="mission-type-personal" />
+                                <Label htmlFor="mission-type-personal" className="font-normal cursor-pointer">Personnel (privé)</Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="SHARED" id="shared" />
-                                <Label htmlFor="shared" className="font-normal cursor-pointer">Collaborateur (partagé)</Label>
+                                <RadioGroupItem value="SHARED" id="mission-type-shared" />
+                                <Label htmlFor="mission-type-shared" className="font-normal cursor-pointer">Collaborateur (partagé)</Label>
                             </div>
                         </RadioGroup>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="title">Titre de la mission</Label>
+                        <Label htmlFor="mission-title">Titre de la mission</Label>
                         <Input
-                            id="title"
+                            id="mission-title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Ex: Préparer le rapport mensuel"
@@ -447,9 +447,9 @@ export const AddMissionModal = ({ isOpen, onClose, onAddMission, authorId }: Mod
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description (optionnel)</Label>
+                        <Label htmlFor="mission-description">Description (optionnel)</Label>
                         <Textarea
-                            id="description"
+                            id="mission-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Détails de la mission..."
