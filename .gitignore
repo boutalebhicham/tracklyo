@@ -47,4 +47,4 @@ firestore-debug.log
 
 # cloud functions
 functions/lib/
-functions/node_modules/
+functions/node_modules/.vscode/

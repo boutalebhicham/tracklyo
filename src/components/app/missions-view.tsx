@@ -45,13 +45,20 @@ const MissionsView = ({ viewedUserId, onAddMission, loggedInUserRole, isViewingS
 
   const missions = useMemo(() => {
     if (!allMissions) return []
-    // Hide tabs view: only show PERSONAL missions
-    if (shouldHideTabs) {
+
+    // RESPONSABLE viewing their own dashboard: show ALL missions (PERSONAL + SHARED)
+    if (loggedInUserRole === 'RESPONSABLE') {
+      return allMissions
+    }
+
+    // PATRON viewing their own dashboard: show only PERSONAL missions
+    if (loggedInUserRole === 'PATRON' && isViewingSelf) {
       return allMissions.filter(m => m.type === 'PERSONAL')
     }
-    // Show tabs: filter by active tab
+
+    // PATRON viewing collaborator: filter by active tab
     return allMissions.filter(m => m.type === activeTab)
-  }, [allMissions, activeTab, shouldHideTabs])
+  }, [allMissions, activeTab, loggedInUserRole, isViewingSelf])
 
   const groupedMissions = useMemo(() => {
     if (!missions) return { TODO: [], IN_PROGRESS: [], DONE: [] }
