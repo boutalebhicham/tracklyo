@@ -3,26 +3,22 @@
 import React from 'react'
 import type { User } from '@/lib/definitions'
 import { Skeleton } from '../ui/skeleton'
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase'
-import { collection, doc, query, where } from 'firebase/firestore'
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase'
+import { collection, query, where } from 'firebase/firestore'
 import ResponsableDashboard from './responsable-dashboard'
 import PatronDashboard from './patron-dashboard'
 
 type DashboardViewProps = {
   viewedUserId: string | null
+  user: User | null
+  isUserLoading: boolean
   onQuickAdd: (modal: any) => void
   setActiveView: (view: string) => void
   setViewedUserId: (userId: string) => void
 }
 
-const DashboardView = ({ viewedUserId, onQuickAdd, setActiveView, setViewedUserId }: DashboardViewProps) => {
+const DashboardView = ({ viewedUserId, user, isUserLoading, onQuickAdd, setActiveView, setViewedUserId }: DashboardViewProps) => {
   const firestore = useFirestore()
-
-  const userDocRef = useMemoFirebase(
-    () => (viewedUserId ? doc(firestore, 'users', viewedUserId) : null),
-    [firestore, viewedUserId]
-  )
-  const { data: user, isLoading: isUserLoading } = useDoc<User>(userDocRef)
 
   // Fetch collaborators if user is PATRON
   const collaboratorsQuery = useMemoFirebase(
