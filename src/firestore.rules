@@ -7,15 +7,15 @@ service cloud.firestore {
     }
 
     function isManagerOf(collaboratorId) {
-      let userDoc = get(/databases/$(database)/documents/users/$(collaboratorId));
+      // Only check if collaborator document exists before reading it
       return request.auth != null &&
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PATRON' &&
-             userDoc.data.managerId == request.auth.uid;
+             exists(/databases/$(database)/documents/users/$(collaboratorId)) &&
+             get(/databases/$(database)/documents/users/$(collaboratorId)).data.managerId == request.auth.uid;
     }
 
     match /users/{userId} {
-      // Allow reading own user document or if user is a manager of this user
+      // Allow reading own user document (simplified for better performance)
+      // Allow managers to read their collaborators' documents
       allow get: if isOwner(userId) || isManagerOf(userId);
 
       // Allow authenticated users to query/list users
