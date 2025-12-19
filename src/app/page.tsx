@@ -97,6 +97,13 @@ export default function Home() {
         // Use displayName if available, otherwise use a clean default name
         const defaultName = authUser.displayName || 'Nouveau Gestionnaire';
 
+        console.log('[Home] Attempting to create user document with data:', {
+          id: authUser.uid,
+          name: defaultName,
+          email: authUser.email || '',
+          role: 'PATRON',
+        });
+
         await setDoc(userDocRef, {
           id: authUser.uid,
           name: defaultName,
@@ -105,6 +112,8 @@ export default function Home() {
           avatar: authUser.photoURL || `https://picsum.photos/seed/${authUser.uid}/100/100`,
           phoneNumber: '',
         }, { merge: true });
+
+        console.log('[Home] ✅ User document created successfully!');
 
         // Mark as attempted
         sessionStorage.setItem(attemptedKey, 'true');
@@ -116,13 +125,15 @@ export default function Home() {
 
         // Don't auto-reload, let user manually reload to avoid confusion
         // The document is created, next page load will work normally
-      } catch (error) {
-        console.error('[Home] Failed to create fallback user document:', error);
+      } catch (error: any) {
+        console.error('[Home] ❌ Failed to create fallback user document:', error);
+        console.error('[Home] Error code:', error?.code);
+        console.error('[Home] Error message:', error?.message);
         setIsCreatingUserDoc(false);
         toast({
           variant: 'destructive',
           title: 'Erreur de profil',
-          description: 'Impossible de créer votre profil. Veuillez vous reconnecter.',
+          description: `Impossible de créer votre profil: ${error?.message || 'Erreur inconnue'}`,
         });
       }
     };

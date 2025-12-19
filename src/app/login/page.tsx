@@ -83,14 +83,21 @@ export default function LoginPage() {
       let retries = 3;
       let docCreated = false;
 
+      console.log('[handleRegister] Creating user document for:', user.uid);
+
       while (retries > 0 && !docCreated) {
         try {
+          console.log(`[handleRegister] Attempt ${4 - retries}/3 to create document...`);
           await setDoc(userDocRef, userData, { merge: true });
           // Wait a moment to ensure Firestore indexes the document
           await new Promise(resolve => setTimeout(resolve, 500));
           docCreated = true;
+          console.log('[handleRegister] ✅ User document created successfully!');
         } catch (docError: any) {
           retries--;
+          console.error(`[handleRegister] ❌ Attempt ${4 - retries}/3 failed:`, docError);
+          console.error('[handleRegister] Error code:', docError?.code);
+          console.error('[handleRegister] Error message:', docError?.message);
           if (retries === 0) {
             console.error('[handleRegister] Failed to create user document after retries:', docError);
             throw new Error('Impossible de créer votre profil. Veuillez réessayer.');
