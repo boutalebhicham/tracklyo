@@ -71,7 +71,14 @@ export default function Home() {
     if (!authUser?.uid) return null;
     return doc(firestore, 'users', authUser.uid);
   }, [firestore, authUser]);
-  const { data: loggedInUserData, isLoading: isPatronLoading } = useDoc<User>(loggedInUserDocRef);
+  const { data: loggedInUserData, isLoading: isPatronLoading, error: loggedInUserError } = useDoc<User>(loggedInUserDocRef);
+
+  // Debug log for user data
+  useEffect(() => {
+    console.log('[Home] loggedInUserData:', loggedInUserData);
+    console.log('[Home] isPatronLoading:', isPatronLoading);
+    console.log('[Home] loggedInUserError:', loggedInUserError);
+  }, [loggedInUserData, isPatronLoading, loggedInUserError]);
 
   // FALLBACK: Create user document if missing (safety net for signup issues)
   const [isCreatingUserDoc, setIsCreatingUserDoc] = useState(false);
@@ -120,11 +127,13 @@ export default function Home() {
 
         toast({
           title: 'Compte créé',
-          description: 'Votre profil a été configuré avec succès. Rechargez la page.',
+          description: 'Rechargement automatique dans 2 secondes...',
         });
 
-        // Don't auto-reload, let user manually reload to avoid confusion
-        // The document is created, next page load will work normally
+        // Auto-reload after 2 seconds to ensure the document is available
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       } catch (error: any) {
         console.error('[Home] ❌ Failed to create fallback user document:', error);
         console.error('[Home] Error code:', error?.code);
