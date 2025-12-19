@@ -228,8 +228,11 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
     const [type, setType] = useState<RecapType>('DAILY');
     const [mediaFile, setMediaFile] = useState<File | null>(null);
     const [isRecording, setIsRecording] = useState(false);
+    const [recordingDuration, setRecordingDuration] = useState(0);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const recognitionRef = React.useRef<any>(null);
+    const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
+    const audioChunksRef = React.useRef<Blob[]>([]);
+    const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       if (event.target.files && event.target.files[0]) {
@@ -238,84 +241,75 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
     };
 
     const handleVoiceInput = async () => {
-      // Check if browser supports speech recognition
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-      if (!SpeechRecognition) {
-        alert('La reconnaissance vocale n\'est pas supportée par votre navigateur. Essayez Chrome ou Safari.');
-        return;
-      }
-
       if (isRecording) {
         // Stop recording
-        recognitionRef.current?.stop();
+        mediaRecorderRef.current?.stop();
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
         setIsRecording(false);
         return;
       }
 
-      // Request microphone permission first
+      // Request microphone permission and start recording
       try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (err) {
-        alert('Veuillez autoriser l\'accès au microphone pour utiliser la dictée vocale.');
-        return;
-      }
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Start recording
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'fr-FR';
-        recognition.continuous = true;
-        recognition.interimResults = true;
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        audioChunksRef.current = [];
 
-        recognition.onstart = () => {
-          setIsRecording(true);
-        };
-
-        let fullTranscript = '';
-
-        recognition.onresult = (event: any) => {
-          let interimTranscript = '';
-
-          for (let i = 0; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              fullTranscript += transcript + ' ';
-            } else {
-              interimTranscript += transcript;
-            }
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
           }
-
-          // Show both final and interim results in real-time
-          setDescription(fullTranscript + interimTranscript);
         };
 
-        recognition.onerror = (event: any) => {
-          console.error('Speech recognition error:', event.error);
-          if (event.error === 'not-allowed') {
-            alert('L\'accès au microphone a été refusé. Veuillez l\'autoriser dans les paramètres de votre navigateur.');
-          }
-          setIsRecording(false);
+        mediaRecorder.onstop = () => {
+          // Create audio file from chunks
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          const audioFile = new File([audioBlob], `vocal-${Date.now()}.webm`, { type: 'audio/webm' });
+          setMediaFile(audioFile);
+
+          // Stop all tracks
+          stream.getTracks().forEach(track => track.stop());
+          setRecordingDuration(0);
         };
 
-        recognition.onend = () => {
-          setIsRecording(false);
-        };
+        mediaRecorder.start();
+        setIsRecording(true);
+        setRecordingDuration(0);
 
-        recognitionRef.current = recognition;
-        recognition.start();
+        // Start timer
+        timerRef.current = setInterval(() => {
+          setRecordingDuration(prev => prev + 1);
+        }, 1000);
+
       } catch (err) {
-        console.error('Error starting speech recognition:', err);
-        alert('Erreur lors du démarrage de la reconnaissance vocale.');
+        console.error('Error accessing microphone:', err);
+        alert('Veuillez autoriser l\'accès au microphone pour enregistrer un message vocal.');
       }
     };
 
+    const formatDuration = (seconds: number) => {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
     const handleSubmit = () => {
-        if(description) {
-            const recapData: Omit<Recap, 'id'> = { authorId, title: title || 'Rapport du jour', description, type, date: new Date().toISOString() };
+        // Allow submit if there's description OR audio file
+        if(description || mediaFile) {
+            const recapData: Omit<Recap, 'id'> = {
+              authorId,
+              title: title || 'Rapport du jour',
+              description: description || 'Message vocal',
+              type,
+              date: new Date().toISOString()
+            };
             if (mediaFile) {
               recapData.mediaUrl = URL.createObjectURL(mediaFile);
-              recapData.mediaType = mediaFile.type.startsWith('image/') ? 'image' : 'video';
+              recapData.mediaType = mediaFile.type.startsWith('audio/') ? 'audio' : mediaFile.type.startsWith('image/') ? 'image' : 'video';
             }
             onAddRecap(recapData);
             setTitle('');
@@ -329,8 +323,15 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
       setTitle('');
       setDescription('');
       setMediaFile(null);
-      recognitionRef.current?.stop();
+      // Stop recording if active
+      if (mediaRecorderRef.current && isRecording) {
+        mediaRecorderRef.current.stop();
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
       setIsRecording(false);
+      setRecordingDuration(0);
       onClose();
     }
 
@@ -351,9 +352,31 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
                         <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Quel est le programme aujourd'hui ?" className="rounded-xl min-h-[120px] bg-transparent border-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0" />
                     </div>
 
-                    {mediaFile && (
-                      <div className="text-sm text-muted-foreground">
-                        Fichier sélectionné: {mediaFile.name}
+                    {/* Show recording indicator */}
+                    {isRecording && (
+                      <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                        <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                          Enregistrement en cours... {formatDuration(recordingDuration)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Show selected file */}
+                    {mediaFile && !isRecording && (
+                      <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                        <Mic className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                          {mediaFile.type.startsWith('audio/') ? 'Message vocal enregistré' : mediaFile.name}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto text-red-500 hover:text-red-600"
+                          onClick={() => setMediaFile(null)}
+                        >
+                          Supprimer
+                        </Button>
                       </div>
                     )}
                 </div>
@@ -377,7 +400,7 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
                         </Button>
                       </div>
                     </div>
-                    <Button onClick={handleSubmit} className="w-full rounded-xl" disabled={!description}>Publier</Button>
+                    <Button onClick={handleSubmit} className="w-full rounded-xl" disabled={!description && !mediaFile}>Publier</Button>
                 </DialogFooter>
                 <Input type="file" accept="image/*,video/*" onChange={handleFileChange} ref={fileInputRef} className="hidden" />
             </GlassDialogContent>
