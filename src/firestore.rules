@@ -24,7 +24,8 @@ service cloud.firestore {
       // Allow creating new users (for signup flow and Admin SDK in API)
       allow create: if request.auth != null;
 
-      match /{subcollection}/{docId} {
+      // All subcollections at any depth (reports, recaps, missions, comments, etc.)
+      match /{path=**} {
         allow read, write: if isOwner(userId) || isManagerOf(userId);
       }
     }

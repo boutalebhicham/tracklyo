@@ -222,7 +222,7 @@ export const AddTransactionModal = ({ isOpen, onClose, onAddTransaction, authorI
 };
 
 
-export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalProps & { onAddRecap: (recap: Omit<Recap, 'id'>) => void, authorId: string }) => {
+export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalProps & { onAddRecap: (recap: Omit<Recap, 'id'>, mediaFile?: File) => void, authorId: string }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [type, setType] = useState<RecapType>('DAILY');
@@ -308,10 +308,10 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
               date: new Date().toISOString()
             };
             if (mediaFile) {
-              recapData.mediaUrl = URL.createObjectURL(mediaFile);
               recapData.mediaType = mediaFile.type.startsWith('audio/') ? 'audio' : mediaFile.type.startsWith('image/') ? 'image' : 'video';
             }
-            onAddRecap(recapData);
+            // Pass mediaFile to parent for upload to Firebase Storage
+            onAddRecap(recapData, mediaFile || undefined);
             setTitle('');
             setDescription('');
             setMediaFile(null);

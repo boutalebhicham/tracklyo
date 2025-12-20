@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useUser } from '@/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { Eye, EyeOff } from 'lucide-react';
 import { doc, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import Logo from '@/components/app/logo';
@@ -33,6 +34,12 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -59,6 +66,23 @@ export default function LoginPage() {
       .catch((e: any) => {
         setError(getFirebaseErrorMessage(e.code));
       });
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      setResetMessage('Veuillez entrer votre adresse email.');
+      return;
+    }
+    setIsResetting(true);
+    setResetMessage(null);
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      setResetMessage('Un email de réinitialisation a été envoyé à votre adresse.');
+    } catch (e: any) {
+      setResetMessage(getFirebaseErrorMessage(e.code));
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   const handleRegister = async (data: RegisterFormData) => {
@@ -190,7 +214,21 @@ export default function LoginPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="register-password">Mot de passe</Label>
-                    <Input id="register-password" type="password" {...registerForm.register('password')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
+                    <div className="relative">
+                      <Input
+                        id="register-password"
+                        type={showRegisterPassword ? "text" : "password"}
+                        {...registerForm.register('password')}
+                        className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                      >
+                        {showRegisterPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                     {registerForm.formState.errors.password && <p className="text-red-400 text-sm">{registerForm.formState.errors.password.message}</p>}
                   </div>
                   {error && <p className="text-red-400 text-sm text-center">{error}</p>}
@@ -223,9 +261,30 @@ export default function LoginPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="login-password">Mot de passe</Label>
-                    <Input id="login-password" type="password" {...loginForm.register('password')} className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900" />
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showLoginPassword ? "text" : "password"}
+                        {...loginForm.register('password')}
+                        className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                      >
+                        {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                     {loginForm.formState.errors.password && <p className="text-red-400 text-sm">{loginForm.formState.errors.password.message}</p>}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary hover:underline text-right -mt-2"
+                  >
+                    Mot de passe oublié ?
+                  </button>
                   {error && <p className="text-red-400 text-sm text-center">{error}</p>}
                   <Button type="submit" className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loginForm.formState.isSubmitting}>
                     {loginForm.formState.isSubmitting ? 'Connexion...' : 'Se connecter'}
@@ -242,6 +301,71 @@ export default function LoginPage() {
           </AnimatePresence>
         </div>
       </motion.div>
+
+      {/* Modal Mot de passe oublié */}
+      <AnimatePresence>
+        {showForgotPassword && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={() => {
+              setShowForgotPassword(false);
+              setResetMessage(null);
+              setResetEmail('');
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white/10 backdrop-blur-lg text-white p-6 sm:p-8 rounded-4xl border border-white/20 shadow-2xl w-full max-w-sm"
+            >
+              <h2 className="text-xl font-bold text-center mb-2">Réinitialiser le mot de passe</h2>
+              <p className="text-center text-sm text-slate-300 mb-6">
+                Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+              </p>
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="votre@email.com"
+                    className="rounded-xl bg-white/10 border-white/20 placeholder:text-slate-400 focus:ring-offset-slate-900"
+                  />
+                </div>
+                {resetMessage && (
+                  <p className={`text-sm text-center ${resetMessage.includes('envoyé') ? 'text-green-400' : 'text-red-400'}`}>
+                    {resetMessage}
+                  </p>
+                )}
+                <Button
+                  onClick={handleForgotPassword}
+                  className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
+                  disabled={isResetting}
+                >
+                  {isResetting ? 'Envoi...' : 'Envoyer le lien'}
+                </Button>
+                <button
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetMessage(null);
+                    setResetEmail('');
+                  }}
+                  className="text-sm text-slate-300 hover:text-white text-center"
+                >
+                  Retour à la connexion
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

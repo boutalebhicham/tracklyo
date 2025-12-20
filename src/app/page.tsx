@@ -145,15 +145,37 @@ export default function Home() {
     }
   };
   
-  const handleAddRecap = (newRecap: Omit<Recap, 'id' | 'authorId' | 'date'>) => {
+  const handleAddRecap = async (newRecap: Omit<Recap, 'id' | 'authorId' | 'date'>, mediaFile?: File) => {
     if (!viewedUserId) return;
-    const ref = collection(firestore, 'users', viewedUserId, 'recaps');
-    addDocumentNonBlocking(ref, { 
-        ...newRecap,
-        authorId: viewedUserId,
-        date: new Date().toISOString()
-     });
-    setModal(null);
+
+    try {
+      let mediaUrl: string | undefined;
+
+      // Upload media file to Firebase Storage if present
+      if (mediaFile) {
+        toast({ title: "Upload en cours...", description: "Téléchargement du fichier média..." });
+        const urls = await uploadFiles([mediaFile], viewedUserId, 'recaps');
+        mediaUrl = urls[0];
+      }
+
+      const ref = collection(firestore, 'users', viewedUserId, 'recaps');
+      addDocumentNonBlocking(ref, {
+          ...newRecap,
+          authorId: viewedUserId,
+          date: new Date().toISOString(),
+          ...(mediaUrl && { mediaUrl }),
+       });
+
+      toast({ title: "Publication créée", description: "Votre rapport a été publié avec succès." });
+      setModal(null);
+    } catch (error) {
+      console.error('[handleAddRecap] Error:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de créer la publication."
+      });
+    }
   };
   
   const handleAddEvent = (newEvent: Omit<Event, 'id' | 'authorId'>) => {
