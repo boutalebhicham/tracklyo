@@ -93,7 +93,7 @@ const RecapCard = ({
       <CardContent className="space-y-4">
         <h3 className="text-lg font-semibold">{recap.title}</h3>
         <p className="text-muted-foreground">{recap.description}</p>
-        {recap.mediaUrl && (
+        {recap.mediaUrl && !recap.mediaUrl.startsWith('blob:') && (
           <div className="w-full rounded-2xl overflow-hidden">
             {recap.mediaType === 'audio' ? (
               <div className="flex items-center gap-3 p-4 bg-gray-100 dark:bg-neutral-800 rounded-2xl">

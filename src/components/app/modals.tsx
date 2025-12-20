@@ -234,6 +234,25 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
     const audioChunksRef = React.useRef<Blob[]>([]);
     const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
+    // Get the best supported audio MIME type for cross-browser compatibility
+    const getSupportedMimeType = (): { mimeType: string; extension: string } => {
+      const types = [
+        { mimeType: 'audio/mp4', extension: 'mp4' },
+        { mimeType: 'audio/webm;codecs=opus', extension: 'webm' },
+        { mimeType: 'audio/webm', extension: 'webm' },
+        { mimeType: 'audio/ogg;codecs=opus', extension: 'ogg' },
+        { mimeType: 'audio/wav', extension: 'wav' },
+      ];
+
+      for (const type of types) {
+        if (MediaRecorder.isTypeSupported(type.mimeType)) {
+          return type;
+        }
+      }
+      // Fallback - let browser choose
+      return { mimeType: '', extension: 'webm' };
+    };
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       if (event.target.files && event.target.files[0]) {
         setMediaFile(event.target.files[0]);
@@ -254,10 +273,15 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
       // Request microphone permission and start recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const { mimeType, extension } = getSupportedMimeType();
 
-        const mediaRecorder = new MediaRecorder(stream);
+        const mediaRecorder = mimeType
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
         mediaRecorderRef.current = mediaRecorder;
         audioChunksRef.current = [];
+
+        const actualMimeType = mediaRecorder.mimeType || 'audio/webm';
 
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
@@ -266,9 +290,10 @@ export const AddRecapModal = ({ isOpen, onClose, onAddRecap, authorId }: ModalPr
         };
 
         mediaRecorder.onstop = () => {
-          // Create audio file from chunks
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          const audioFile = new File([audioBlob], `vocal-${Date.now()}.webm`, { type: 'audio/webm' });
+          // Create audio file from chunks with the actual recorded MIME type
+          const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
+          const fileExtension = actualMimeType.includes('mp4') ? 'mp4' : actualMimeType.includes('ogg') ? 'ogg' : extension;
+          const audioFile = new File([audioBlob], `vocal-${Date.now()}.${fileExtension}`, { type: actualMimeType });
           setMediaFile(audioFile);
 
           // Stop all tracks

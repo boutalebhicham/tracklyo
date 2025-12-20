@@ -43,7 +43,7 @@ export interface Recap {
   description: string;
   date: string;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video';
+  mediaType?: 'image' | 'video' | 'audio';
 }
 
 export interface Comment {

@@ -148,32 +148,61 @@ export default function Home() {
   const handleAddRecap = async (newRecap: Omit<Recap, 'id' | 'authorId' | 'date'>, mediaFile?: File) => {
     if (!viewedUserId) return;
 
-    try {
-      let mediaUrl: string | undefined;
+    let mediaUrl: string | undefined;
+    let mediaUploadFailed = false;
 
-      // Upload media file to Firebase Storage if present
-      if (mediaFile) {
+    // Upload media file to Firebase Storage if present
+    if (mediaFile) {
+      try {
         toast({ title: "Upload en cours...", description: "Téléchargement du fichier média..." });
         const urls = await uploadFiles([mediaFile], viewedUserId, 'recaps');
         mediaUrl = urls[0];
+      } catch (uploadError) {
+        console.error('[handleAddRecap] Media upload failed:', uploadError);
+        mediaUploadFailed = true;
+        // Continue to create the recap without media
+      }
+    }
+
+    try {
+      const ref = collection(firestore, 'users', viewedUserId, 'recaps');
+
+      // Build the recap data - only include mediaType if we have a mediaUrl
+      const recapData: Record<string, any> = {
+        ...newRecap,
+        authorId: viewedUserId,
+        date: new Date().toISOString(),
+      };
+
+      if (mediaUrl) {
+        recapData.mediaUrl = mediaUrl;
+        // Ensure mediaType is set correctly
+        if (newRecap.mediaType) {
+          recapData.mediaType = newRecap.mediaType;
+        }
+      } else {
+        // Remove mediaType if no media was uploaded
+        delete recapData.mediaType;
       }
 
-      const ref = collection(firestore, 'users', viewedUserId, 'recaps');
-      addDocumentNonBlocking(ref, {
-          ...newRecap,
-          authorId: viewedUserId,
-          date: new Date().toISOString(),
-          ...(mediaUrl && { mediaUrl }),
-       });
+      await addDocumentNonBlocking(ref, recapData);
 
-      toast({ title: "Publication créée", description: "Votre rapport a été publié avec succès." });
+      if (mediaUploadFailed) {
+        toast({
+          variant: "destructive",
+          title: "Publication créée (sans média)",
+          description: "Le fichier média n'a pas pu être uploadé. Vérifiez les permissions Storage."
+        });
+      } else {
+        toast({ title: "Publication créée", description: "Votre rapport a été publié avec succès." });
+      }
       setModal(null);
     } catch (error) {
-      console.error('[handleAddRecap] Error:', error);
+      console.error('[handleAddRecap] Error creating recap:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de créer la publication."
+        description: "Impossible de créer la publication. Vérifiez la console pour plus de détails."
       });
     }
   };
