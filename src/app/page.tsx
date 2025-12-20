@@ -281,7 +281,7 @@ export default function Home() {
       case 'finances':
         return <FinancesView viewedUserId={viewedUserId} onAddTransaction={() => setModal('addTransaction')} viewAs={loggedInUserData?.role} />;
       case 'activite':
-        return <ActivityView viewedUserId={viewedUserId} users={allUsersForActivity} onAddRecap={() => setModal('addRecap')} currentUser={loggedInUserData} />;
+        return <ActivityView viewedUserId={viewedUserId} users={allUsersForActivity} onAddRecap={() => setModal('addRecap')} currentUser={loggedInUserData} collaborators={collaborators || []} />;
       case 'missions':
         // Pass logged-in user role to determine tab visibility
         const isViewingSelf = viewedUserId === authUser?.uid;
